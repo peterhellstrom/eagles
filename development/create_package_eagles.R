@@ -16,6 +16,35 @@ devtools::test()
 # Document data:
 # https://r-pkgs.org/data.html
 
+
+library(devtools)
+library(usethis)
+
+p <- "W:/PROJEKT/R/cyclar"
+#usethis::create_package(p, check_name = FALSE)
+
+usethis::use_mit_license()
+
+use_git_config(user.name = "peterhellstrom", user.email = "peter.hellstrom@nrm.se")
+usethis::use_git()
+usethis::use_github()
+# GitHub API error (401): Bad credentials
+
+usethis::create_github_token()
+devtools::load_all()
+
+# Must run document() to add export functions to NAMESPACE
+devtools::document()
+devtools::install()
+
+devtools::test()
+
+# Document data:
+# https://r-pkgs.org/data.html
+
+install_github("peterhellstrom/cyclar")
+
+
 ## Load package ----
 library(eagles)
 
