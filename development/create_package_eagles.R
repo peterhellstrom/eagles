@@ -1,6 +1,7 @@
 # https://r-pkgs.org
 
 library(devtools)
+library(usethis)
 
 p <- "W:/PROJEKT/R/eagles"
 #usethis::create_package(p, check_name = FALSE)
@@ -16,10 +17,6 @@ devtools::test()
 # Document data:
 # https://r-pkgs.org/data.html
 
-
-library(devtools)
-library(usethis)
-
 p <- "W:/PROJEKT/R/cyclar"
 #usethis::create_package(p, check_name = FALSE)
 
@@ -31,6 +28,10 @@ usethis::use_github()
 # GitHub API error (401): Bad credentials
 
 usethis::create_github_token()
+
+use_readme_rmd()
+build_readme()
+
 devtools::load_all()
 
 # Must run document() to add export functions to NAMESPACE
