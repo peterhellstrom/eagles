@@ -3,7 +3,7 @@
 library(devtools)
 library(usethis)
 
-p <- "W:/PROJEKT/R/eagles"
+p <- "W:/projects/R/eagles"
 #usethis::create_package(p, check_name = FALSE)
 
 devtools::load_all()
@@ -17,7 +17,7 @@ devtools::test()
 # Document data:
 # https://r-pkgs.org/data.html
 
-p <- "W:/PROJEKT/R/cyclar"
+p <- "W:/projects/R/cyclar"
 #usethis::create_package(p, check_name = FALSE)
 
 usethis::use_mit_license()

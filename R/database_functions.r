@@ -20,7 +20,7 @@ db_connect_to_access_string <- function (access.file, uid = "", pwd = "", ...) {
     #RODBC::odbcDriverConnect(con, ...)
 }
 
-#access_connect_string("W:/PROJEKT/databaser/RaptorBase/RaptorBase.accdb")
+#access_connect_string("W:/projects/data/RaptorBase/RaptorBase.accdb")
 
 # Connect to MS Access database
 # Connect with packages DBI or RODBC
