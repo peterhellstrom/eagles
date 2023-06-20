@@ -195,3 +195,42 @@ add_wt <- function(.x, .var, ...) {
     mutate(wt = 1/n) %>%
     arrange({{.var}})
 }
+
+#' @export
+download_zip <- function(wd, folder, files, files_url,
+                         file_type = "zip", files_unzip = TRUE, delete_zip = TRUE,
+                         junkpaths = TRUE, overwrite = TRUE, add_date = FALSE, ...) {
+
+  # Create path to a (temporary) directory
+  if (add_date) {
+    dl_wd <- paste(wd, folder, "_", Sys.Date(), sep = "")
+  } else {
+    dl_wd <- paste(wd, folder, sep = "")
+  }
+  if (file.exists(dl_wd) == FALSE) dir.create(dl_wd) # Check if directory exists, create if not!
+  cat(paste("File(s) will be downloaded to ", dl_wd), "\n")
+  setwd(dl_wd)
+
+  # Download files
+  dl_files <- paste(dl_wd, "/", files, ".", file_type, sep = "")
+  #print(dl_files)
+
+  for (i in 1:length(files)) {
+    cat(paste("Downloading ", files[i], ".", file_type, sep = ""), "\n")
+    try(download.file(url = files_url[i], destfile = dl_files[i], quiet = TRUE, ...))
+  }
+
+  # create list of all zip-files in the working directory
+  files_zip <- list.files(dl_wd, pattern = paste(".", file_type, sep = ""))
+  #print(files_zip)
+
+  if (files_unzip) {
+    # unzip each downloaded archive
+    for (i in 1:length(files_zip)) try(unzip(files_zip[i], junkpaths = junkpaths, overwrite = overwrite))
+  }
+
+  if (delete_zip == TRUE) {
+    # Delete zip-archives
+    file.remove(files_zip)
+  }
+}
