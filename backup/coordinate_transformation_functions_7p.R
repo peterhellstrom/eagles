@@ -43,16 +43,15 @@ rotation_parameters <- function(transform_to) {
 }
 
 # 3) General formula, transformation parameters can be tricky though...
-# Matrix version!
 cartesian_proj <- function(x, y, z, parameters, rot_rad = 2 * pi / (3600 * 360)) {
 	with(as.list(parameters), {
 		omega_x <- omega_x * rot_rad
 		omega_y <- omega_y * rot_rad
 		omega_z <- omega_z * rot_rad
 
-		r_z <- matrix(c(cos(omega_z), sin(omega_z), 0, -sin(omega_z), cos(omega_z), 0, 0, 0, 1), byrow <- TRUE, nrow <- 3, ncol <- 3)
-		r_y <- matrix(c(cos(omega_y), 0, -sin(omega_y), 0, 1, 0, sin(omega_y), 0, cos(omega_y)), byrow <- TRUE, nrow <- 3, ncol <- 3)
-		r_x <- matrix(c(1, 0, 0, 0, cos(omega_x), sin(omega_x), 0, -sin(omega_x), cos(omega_x)), byrow <- TRUE, nrow <- 3, ncol <- 3)
+		r_z <- matrix(c(cos(omega_z), sin(omega_z), 0, -sin(omega_z), cos(omega_z), 0, 0, 0, 1), byrow = TRUE, nrow = 3, ncol = 3)
+		r_y <- matrix(c(cos(omega_y), 0, -sin(omega_y), 0, 1, 0, sin(omega_y), 0, cos(omega_y)), byrow = TRUE, nrow = 3, ncol = 3)
+		r_x <- matrix(c(1, 0, 0, 0, cos(omega_x), sin(omega_x), 0, -sin(omega_x), cos(omega_x)), byrow = TRUE, nrow = 3, ncol = 3)
 		r <- r_z %*% r_y %*% r_x
 
 		out <- c(delta_x, delta_y, delta_z) + (1 + delta) * r %*% c(x, y, z)
