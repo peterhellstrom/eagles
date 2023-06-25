@@ -136,7 +136,7 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 }
 
 
-# Konvertera logiska fält från text [Ja/Nej] till TRUE/FALSE ----
+# Konvertera logiska fält från text [Ja/Nej] till TRUE/FALSE
 #' @export
 convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
   cols <- enquo(cols)
@@ -148,7 +148,7 @@ convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
     mutate(across(!!cols, ~ as.logical(.)))
 }
 
-# Ersätt specificerat värde med kolumnnamnet för variabeln ----
+# Ersätt specificerat värde med kolumnnamnet för variabeln
 
 # Tänkt användning: ersätt "Ja" med kolumnnamnet och sätt Nej till NA
 # Två varianter av funktionen, den första använder ifelse och där finns
@@ -176,7 +176,6 @@ colname_to_value2 <- function(.x, cols) {
     dplyr::mutate(dplyr::across(!!cols, ~ as.character(.)))
 }
 
-## Summera grupp ----
 #' @export
 sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
   .x %>%
@@ -197,23 +196,30 @@ add_wt <- function(.x, .var, ...) {
 }
 
 #' @export
-download_zip <- function(wd, folder, files, files_url,
-                         file_type = "zip", files_unzip = TRUE, delete_zip = TRUE,
-                         junkpaths = TRUE, overwrite = TRUE, add_date = FALSE, ...) {
+download_zip <- function(
+    wd, folder,
+    files, files_url,
+    file_type = "zip", files_unzip = TRUE,
+    delete_zip = TRUE,
+    junkpaths = TRUE, overwrite = TRUE,
+    add_date = FALSE, ...) {
 
-  # Create path to a (temporary) directory
+  # Create path to a directory
   if (add_date) {
     dl_wd <- paste(wd, folder, "_", Sys.Date(), sep = "")
   } else {
     dl_wd <- paste(wd, folder, sep = "")
   }
-  if (file.exists(dl_wd) == FALSE) dir.create(dl_wd) # Check if directory exists, create if not!
+
+  # Check if directory exists, create if not!
+  if (file.exists(dl_wd) == FALSE) {
+    dir.create(dl_wd)
+  }
+
   cat(paste("File(s) will be downloaded to ", dl_wd), "\n")
-  setwd(dl_wd)
 
   # Download files
   dl_files <- paste(dl_wd, "/", files, ".", file_type, sep = "")
-  #print(dl_files)
 
   for (i in 1:length(files)) {
     cat(paste("Downloading ", files[i], ".", file_type, sep = ""), "\n")
@@ -221,16 +227,18 @@ download_zip <- function(wd, folder, files, files_url,
   }
 
   # create list of all zip-files in the working directory
-  files_zip <- list.files(dl_wd, pattern = paste(".", file_type, sep = ""))
-  #print(files_zip)
+  files_zip <- list.files(dl_wd, pattern = paste(".", file_type, sep = ""),
+                          full.names = TRUE)
 
   if (files_unzip) {
     # unzip each downloaded archive
-    for (i in 1:length(files_zip)) try(unzip(files_zip[i], junkpaths = junkpaths, overwrite = overwrite))
+    for (i in 1:length(files_zip)) {
+      try(unzip(files_zip[i], junkpaths = junkpaths, overwrite = overwrite,
+                exdir = dl_wd))
+    }
   }
 
   if (delete_zip == TRUE) {
-    # Delete zip-archives
     file.remove(files_zip)
   }
 }
