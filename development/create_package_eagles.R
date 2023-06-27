@@ -17,7 +17,6 @@ devtools::test()
 # Document data:
 # https://r-pkgs.org/data.html
 
-p <- "W:/projects/R/cyclar"
 #usethis::create_package(p, check_name = FALSE)
 
 usethis::use_mit_license()
@@ -31,14 +30,6 @@ usethis::create_github_token()
 
 use_readme_rmd()
 build_readme()
-
-devtools::load_all()
-
-# Must run document() to add export functions to NAMESPACE
-devtools::document()
-devtools::install()
-
-devtools::test()
 
 # Document data:
 # https://r-pkgs.org/data.html
