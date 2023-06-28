@@ -7,6 +7,7 @@ x <- indexrutor_namn()
 storrutor <- x$storrutor
 ekorutor <- x$ekorutor
 fastighetsblad <- x$fastighetsblad
+
 wms_layers_data <- wms_sources()
 tms_layers_data <- tms_sources()
 
@@ -15,3 +16,4 @@ use_data(ekorutor, overwrite = TRUE)
 use_data(fastighetsblad, overwrite = TRUE)
 use_data(wms_layers_data, overwrite = TRUE)
 use_data(tms_layers_data, overwrite = TRUE)
+

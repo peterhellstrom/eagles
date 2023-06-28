@@ -3,7 +3,7 @@
 library(devtools)
 library(usethis)
 
-p <- "W:/projects/R/eagles"
+#p <- "W:/projects/R/eagles"
 #usethis::create_package(p, check_name = FALSE)
 
 devtools::load_all()
@@ -12,6 +12,7 @@ devtools::load_all()
 devtools::document()
 devtools::install()
 
+devtools::check()
 devtools::test()
 
 # Document data:

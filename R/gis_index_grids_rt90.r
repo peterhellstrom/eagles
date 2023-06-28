@@ -133,12 +133,14 @@ add_rt90_index <- function(data, .grid_size = c(50000, 25000, 5000), .prefix = "
 # rt90_index(data, rubin = TRUE, rubin_num = 100)
 # rt90_index(data, rubin = TRUE, rubin_num = 1)
 
-# dependencies: library(gtools)
+# input variable grid should in future versions be parsed
+# with regular expressions, and not with substr()
+# Should add grid size 25 here as well, possibly also RUBIN coordinates
+	# x: indexruta, längd 5 tecken t.ex. 09E2g
+
 #' @export
 index_rt90 <- function(grid, .grid_size = 5000) {
 
-  # Should add grid size 25 here as well, possibly also RUBIN coordinates
-	# x: indexruta, längd 5 tecken t.ex. 09E2g
 	nstor <- as.numeric(substr(grid, 1, 2))
 	estor <- substr(grid, 3, 3)
 
@@ -147,11 +149,13 @@ index_rt90 <- function(grid, .grid_size = 5000) {
 
 	if (.grid_size == 5000) {
 	  nekon <- as.numeric(substr(grid, 4, 4))
-	  eekon <- substr(grid, 5, 5)
+	  # eekon must be supplied as lower case
+	  eekon <- tolower(substr(grid, 5, 5))
 
 		out <- data.frame(
 			northing = ((nstor - 1) * 50000) + (nekon * 5000) + 6100000,
-			easting = as.numeric((((gtools::asc(estor) - 64) - 1) * 50000) + (((gtools::asc(eekon) - 96) - 1) * 5000) + 1200000)
+			easting = as.numeric((((gtools::asc(estor) - 64) - 1) * 50000) +
+			                       (((gtools::asc(eekon) - 96) - 1) * 5000) + 1200000)
 		)
 	} else if (.grid_size == 50000) {
 		out <- data.frame(

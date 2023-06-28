@@ -7,7 +7,7 @@ indexrutor_namn <- function(file_path = "inst/extdata/index_grids_RT90_names.xls
   storrutor <- readxl::read_excel(
     path = file_path,
     sheet = "Storrutor_50km_RT90",
-    range = "A1:B253")
+    col_types = "text")
 
   storrutor <- storrutor |>
     dplyr::mutate(index_rt90(ruta_id, .grid_size = 50000)) |>
@@ -18,7 +18,8 @@ indexrutor_namn <- function(file_path = "inst/extdata/index_grids_RT90_names.xls
   ekorutor <- readxl::read_excel(
     path = file_path,
     sheet = "Ekorutor_5km_RT90",
-    range = "A1:B19193")
+    col_types = "text") |>
+    dplyr::select(-alternativt_namn)
 
   ekorutor <- ekorutor |>
     dplyr::mutate(index_rt90(ruta_id, .grid_size = 5000)) |>
@@ -28,14 +29,17 @@ indexrutor_namn <- function(file_path = "inst/extdata/index_grids_RT90_names.xls
 
   fastighetsblad <- readxl::read_excel(
     path = file_path,
-    sheet = "Fastighet_SWEREF99_TM")
+    sheet = "Fastighet_SWEREF99_TM",
+    col_types = "text")
 
   fastighetsblad <- fastighetsblad %>%
     dplyr::mutate(
-      ruta = format_fastighetsruta(blad_id),
-      ruta_del = str_sub(blad, -1)) |>
+      blad = eagles:::format_fastighetsblad(blad_id),
+      ruta = eagles:::format_fastighetsruta(blad_id),
+      ruta_del = str_sub(blad_id, -1)) |>
     tidyr::separate(ruta, into = c("northing", "easting"),
                     sep = "_", remove = FALSE) |>
+    dplyr::relocate(blad, .after = blad_id) |>
     dplyr::relocate(ruta_del, .after = ruta) |>
     dplyr::mutate(
       northing = stringr::str_pad(northing, width = 7, pad = "0", side = "right"),
@@ -53,13 +57,18 @@ indexrutor_namn <- function(file_path = "inst/extdata/index_grids_RT90_names.xls
 }
 
 #' @export
-index_to_sf <- function(data, x, y, deltax, deltay, crs) {
-  data |>
+index_to_sf <- function(.data, x, y, deltax, deltay, crs, remove = TRUE) {
+  .out <- .data |>
     dplyr::rowwise() |>
     dplyr::mutate(geometry = list(grid_cell({{x}}, {{y}}, deltax, deltay))) |>
     sf::st_as_sf(sf_column_name = "geometry") |>
-    sf::st_set_crs(crs) |>
-    dplyr::select(-{{x}}, -{{y}})
+    sf::st_set_crs(crs)
+
+  if (remove) {
+    .out <- .out |>
+      dplyr::select(-{{x}}, -{{y}})
+  }
+  .out
 }
 
 # remove leading zero
