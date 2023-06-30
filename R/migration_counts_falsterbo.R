@@ -37,8 +37,6 @@ reshape_species_year <- function(x) {
 #' @export
 falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 
-  #species_url <- replace_swe_hex(species)
-
   url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-ar/?lang=sv&art=",
                         utils::URLencode(species), "&year=", year)
 
@@ -67,8 +65,6 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 # Q: Deal with 0 and NA?
 #' @export
 falsterbo_species_all_years <- function(species, replace_na = TRUE) {
-
-  #species_url <- replace_swe_hex(species)
 
   url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-alla-ar/?lang=sv&art=",
                         utils::URLencode(species))
