@@ -139,13 +139,12 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 # Konvertera logiska fält från text [Ja/Nej] till TRUE/FALSE
 #' @export
 convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
-  cols <- enquo(cols)
-  .x %>%
-    mutate(across(!!cols, ~ case_when(
-      . == yes_value ~ TRUE,
-      . == no_value ~ FALSE,
-      TRUE ~ NA))) %>%
-    mutate(across(!!cols, ~ as.logical(.)))
+  .x |>
+    dplyr::mutate(across({{cols}}, \(x) case_when(
+      x %in% yes_value ~ TRUE,
+      x %in% no_value ~ FALSE,
+      TRUE ~ NA))) |>
+    dplyr::mutate(across({{cols}}, as.logical))
 }
 
 # Ersätt specificerat värde med kolumnnamnet för variabeln
@@ -155,15 +154,25 @@ convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
 # även möjligheten att ange vilka värden som motsvarar Ja och Nej
 #' @export
 colname_to_value <- function(.x, cols, yes_value = TRUE, no_value = NA) {
-  cols <- enquo(cols)
-  .x %>%
-    dplyr::mutate(dplyr::across(!!cols, function(x) base::ifelse(x == yes_value, dplyr::cur_column(), no_value))) %>%
-    dplyr::mutate(dplyr::across(!!cols, ~ as.character(.)))
+  .x |>
+    dplyr::mutate(
+      dplyr::across({{cols}}, as.character),
+      dplyr::across({{cols}},
+                    \(x) dplyr::if_else(x %in% yes_value, dplyr::cur_column(), no_value)))
 }
+
+# x <- tribble(
+#   ~x, ~y,
+#   "yes", TRUE,
+#   "no", FALSE
+# )
+#
+# colname_to_value(x, x:y, yes_value = c("yes", TRUE), no_value = NA)
+# convert_to_logical(x, x, yes_value = "yes", no_value = "no")
+
+
 # den andra varianten använder case_when och förutsätter att datavärden
-# i kolumnerna som anges meda argumentet cols är TRUE/FALSE (dvs. logical)
-# behöver alltså användas tillsammans med funktionen kungsorn logical för att
-# fungera som tänkt.
+# i kolumnerna som anges med argumentet cols är TRUE/FALSE (dvs. logical).
 #' @export
 colname_to_value2 <- function(.x, cols) {
   cols <- enquo(cols)
@@ -179,20 +188,20 @@ colname_to_value2 <- function(.x, cols) {
 #' @export
 sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
   .x %>%
-    map(~ .data %>%
-          group_by_at(.x) %>%
-          summarize_at(vars({{.vars}}), .fn, na.rm = TRUE)) %>%
-    bind_rows()
+    purrr::map(~ .data %>%
+                 dplyr::group_by_at(.x) %>%
+                 dplyr::summarize_at(vars({{.vars}}), .fn, na.rm = TRUE)) %>%
+    dplyr::bind_rows()
 }
 
 #' @export
 add_wt <- function(.x, .var, ...) {
-  {{.x}} %>%
-    select({{.var}}, ...) %>%
-    distinct() %>%
-    add_count({{.var}}) %>%
-    mutate(wt = 1/n) %>%
-    arrange({{.var}})
+  .x |>
+    dplyr::select({{.var}}, ...) |>
+    dplyr::distinct() |>
+    dplyr::add_count({{.var}}) |>
+    dplyr::mutate(wt = 1/n) |>
+    dplyr::arrange({{.var}})
 }
 
 #' @export
