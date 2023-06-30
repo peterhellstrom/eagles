@@ -57,10 +57,10 @@ indexrutor_namn <- function(file_path = "inst/extdata/index_grids_RT90_names.xls
 }
 
 #' @export
-index_to_sf <- function(.data, x, y, deltax, deltay, crs, remove = TRUE) {
+index_to_sf <- function(.data, x, y, delta_x, delta_y, crs, remove = TRUE) {
   .out <- .data |>
     dplyr::rowwise() |>
-    dplyr::mutate(geometry = list(grid_cell({{x}}, {{y}}, deltax, deltay))) |>
+    dplyr::mutate(geometry = list(grid_cell({{x}}, {{y}}, delta_x, delta_y))) |>
     sf::st_as_sf(sf_column_name = "geometry") |>
     sf::st_set_crs(crs)
 

@@ -53,9 +53,10 @@ grid_cell <- function(x, y, delta_x, delta_y, order = "clockwise") {
 # grid_cell(1300000, 6100000, 50000, 50000)
 
 #' @export
-grid_parms <- function(delta_x, delta_y,
-                       min_x = 200000, max_x = 1000000,
-                       min_y = 6100000, max_y = 7700000) {
+grid_parms <- function(
+    delta_x, delta_y,
+    min_x = 200000, max_x = 1000000,
+    min_y = 6100000, max_y = 7700000) {
 
   n_x <- ceiling((max_x - min_x) / delta_x)
   x <- min_x + (0:n_x * delta_x)
@@ -152,10 +153,12 @@ layout_grid_size <- function(
 }
 
 #' @export
-add_grid_neighbours <- function(map_grid,
-                                direction = c("s-n", "n-s"),
-                                page_variable = "PageNumber", sep = "_",
-                                add_neighbours = TRUE) {
+add_grid_neighbours <- function(
+    map_grid,
+    direction = c("s-n", "n-s"),
+    page_variable = "PageNumber",
+    sep = "_",
+    add_neighbours = TRUE) {
 
   direction <- match.arg(direction)
 

@@ -6,10 +6,12 @@ copy_from_gpkg <- function(
 
   driver <- match.arg(driver)
 
-  f <- gpkg_contents(dsn_source) %>% rename(src_driver = driver)
+  f <- gpkg_contents(dsn_source) %>%
+    rename(src_driver = driver)
 
   if (!is.null(filter_expr)) {
-    f <- f %>% filter(str_detect(name, filter_expr))
+    f <- f %>%
+      filter(str_detect(name, filter_expr))
   }
 
   f_copy <- f %>%

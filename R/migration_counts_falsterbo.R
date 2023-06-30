@@ -35,18 +35,12 @@ reshape_species_year <- function(x) {
 }
 
 #' @export
-replace_swe_hex <- function(x) {
-  stringr::str_replace_all(
-    x,
-    c("Å" = "%C3%85", "Ä" = "%C3%84", "Ö" = "%C3%96"))
-}
-
-#' @export
 falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 
-  species_url <- replace_swe_hex(species)
+  #species_url <- replace_swe_hex(species)
 
-  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-ar/?lang=sv&art=", species_url, "&year=", year)
+  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-ar/?lang=sv&art=",
+                        utils::URLencode(species), "&year=", year)
 
   x <- url |>
     xml2::read_html() |>
@@ -74,8 +68,10 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 #' @export
 falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 
-  species_url <- replace_swe_hex(species)
-  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-alla-ar/?lang=sv&art=", species_url)
+  #species_url <- replace_swe_hex(species)
+
+  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-alla-ar/?lang=sv&art=",
+                        utils::URLencode(species))
 
   x <- url |>
     xml2::read_html() |>

@@ -9,4 +9,4 @@
 library(testthat)
 library(eagles)
 
-test_check("eagle")
+test_check("eagles")

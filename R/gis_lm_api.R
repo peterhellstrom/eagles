@@ -26,8 +26,8 @@ lm_hojdmodell_url <- function(
       version = "2.0.1",
       request = "GetCoverage",
       coverageid = "hojdgrid_1m",
-      subset = glue("y,epsg:{crs}({ymin},{ymax})"),
-      subset = glue("x,epsg:{crs}({xmin},{xmax})"),
+      subset = glue::glue("y,epsg:{crs}({ymin},{ymax})"),
+      subset = glue::glue("x,epsg:{crs}({xmin},{xmax})"),
       format = "image/tiff"
     ))
 }

@@ -1,9 +1,9 @@
 Package: eagles
-Title: What the Package Does (One Line, Title Case)
+Title: Analysis and Editing of Data Collected in Swedish Eagle Monitoring
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Peter", "Hellström", , "peter.hellstrom@nrm.se", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-5124-2534"))
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8

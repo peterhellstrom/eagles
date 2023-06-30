@@ -99,17 +99,20 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 	}
 
 	case_when(
-	  .grid_size == 1000 ~ str_c(bk_50, bk_5,
-	                             str_c(
-	                               floor((.y %% 5000) / 1000),
-	                               floor((.x %% 5000) / 1000)),
-	                             sep = sep),
-	  .grid_size == 5000 ~ str_c(bk_50, sep, bk_5, rubin_str),
-	  .grid_size == 25000 ~ str_c(bk_50,
-	                              quadrant_cardinal(
-	                                floor(1 + (.y - y_min) / 50000),
-	                                floor(1 + (.y - y_min) / 50000)),
-	                              sep = sep),
+	  .grid_size == 1000 ~
+	    str_c(bk_50, bk_5,
+	          str_c(
+	            floor((.y %% 5000) / 1000),
+	            floor((.x %% 5000) / 1000)),
+	          sep = sep),
+	  .grid_size == 5000 ~
+	    str_c(bk_50, sep, bk_5, rubin_str),
+	  .grid_size == 25000 ~
+	    str_c(bk_50,
+	          quadrant_cardinal(
+	            floor(1 + (.y - y_min) / 50000),
+	            floor(1 + (.y - y_min) / 50000)),
+	          sep = sep),
 	  .grid_size == 50000 ~ bk_50,
 	  TRUE ~ NA
 	)

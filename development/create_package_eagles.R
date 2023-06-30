@@ -1,19 +1,24 @@
 # https://r-pkgs.org
 
-library(devtools)
-library(usethis)
+#devtools::install_github("r-lib/devtools")
+#devtools::install_github("r-lib/usethis")
+
+#library(devtools) # added to .Rprofile startup file
 
 #p <- "W:/projects/R/eagles"
 #usethis::create_package(p, check_name = FALSE)
 
-devtools::load_all()
+load_all()
 
 # Must run document() to add export functions to NAMESPACE
-devtools::document()
-devtools::install()
+document()
+install()
 
-devtools::check()
-devtools::test()
+chk_eagles <- check()
+glimpse(chk_eagles)
+names(chk_eagles)
+
+test()
 
 # Document data:
 # https://r-pkgs.org/data.html
@@ -35,7 +40,7 @@ build_readme()
 # Document data:
 # https://r-pkgs.org/data.html
 
-install_github("peterhellstrom/cyclar")
+install_github("peterhellstrom/eagles")
 
 
 ## Load package ----
@@ -66,4 +71,4 @@ round_up(9.45)
 lm_basemaps()
 swe_tiles(tile_providers = tms_layers_data)
 index_to_sf(storrutor, easting, northing, 50000, 50000, 3021) %>%
-  mapview()
+  mapview::mapview()

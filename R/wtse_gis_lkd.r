@@ -6,12 +6,15 @@
 # UTF8 encoding support in R >= 4.2, does not work with MS Access
 # databases. RODBC connection is therefore used as standard connection.
 #' @export
-wtse_lkd <- function(odbc_name = "Havsorn_Data", spatial = TRUE,
-                     crs = NULL, add_coordinates = FALSE,
-                     names = c("x", "y"),
-                     db_package = c("RODBC", "DBI"),
-                     encoding = 'windows-1252',
-                     db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg") {
+wtse_lkd <- function(
+    odbc_name = "Havsorn_Data",
+    spatial = TRUE,
+    crs = NULL,
+    add_coordinates = FALSE,
+    names = c("x", "y"),
+    db_package = c("RODBC", "DBI"),
+    encoding = 'windows-1252',
+    db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg") {
 	# requires: tidyverse, DBI, sf
 
   db_package <- match.arg(db_package)
@@ -36,10 +39,10 @@ wtse_lkd <- function(odbc_name = "Havsorn_Data", spatial = TRUE,
   # Ange vilken funktion som ska användas för att läsa in tabeller
   if (db_package == "DBI") {
     db_data_conn <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
-    db_f <- DBI::dbReadTable
+    db_f <- function (...) DBI::dbReadTable(...)
   } else if (db_package == "RODBC") {
     db_data_conn <- RODBC::odbcConnect(dsn = odbc_name)
-    db_f <- RODBC::sqlFetch
+    db_f <- function(...) RODBC::sqlFetch(...)
   }
 
   # "Läs in" data till variablerna x.
