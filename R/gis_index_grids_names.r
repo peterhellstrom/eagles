@@ -62,7 +62,8 @@ index_to_sf <- function(.data, x, y, delta_x, delta_y, crs, remove = TRUE) {
     dplyr::rowwise() |>
     dplyr::mutate(geometry = list(grid_cell({{x}}, {{y}}, delta_x, delta_y))) |>
     sf::st_as_sf(sf_column_name = "geometry") |>
-    sf::st_set_crs(crs)
+    sf::st_set_crs(crs) |>
+    dplyr::ungroup()
 
   if (remove) {
     .out <- .out |>

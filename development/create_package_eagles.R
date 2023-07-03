@@ -58,7 +58,11 @@ fastighetsblad
 wms_layers_data
 tms_layers_data
 
-st_as_sf(storrutor, coords = c("easting", "northing"), crs = 3021)
+storrutor |>
+  st_as_sf(coords = c("easting", "northing"), crs = 3021)
+
+storrutor |>
+  index_to_sf(easting, northing, 50000, 50000, 3021)
 
 ## Functions ----
 # How should functions be written - include source package in code?

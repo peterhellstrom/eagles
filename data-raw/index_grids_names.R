@@ -75,20 +75,36 @@ all.equal(fastighetsblad, eagles::fastighetsblad)
 
 # Check that grid are "spatiall correct" by creating mapviews ----
 ## Convert to spatial objects ----
-storrutor_sf <- eagles::storrutor |>
+system.time(storrutor_sf <- eagles::storrutor |>
   eagles::index_to_sf(
     x = easting, y = northing,
-    deltax = 50000, deltay = 50000, crs = 3021)
+    delta_x = 50000, delta_y = 50000, crs = 3021, remove = FALSE))
 
-ekorutor_sf <- eagles::ekorutor |>
+system.time(ekorutor_sf <- eagles::ekorutor |>
   eagles::index_to_sf(
     x = easting, y = northing,
-    deltax = 5000, deltay = 5000, crs = 3021)
+    delta_x = 5000, delta_y = 5000, crs = 3021, remove = FALSE))
 
-fastighetsblad_sf <- eagles::fastighetsblad |>
+system.time(fastighetsblad_sf <- eagles::fastighetsblad |>
   eagles::index_to_sf(
     x = easting, y = northing,
-    deltax = 10000, deltay = 5000, crs = 3006)
+    delta_x = 10000, delta_y = 5000, crs = 3006, remove = FALSE))
+
+system.time(storrutor_sf2 <- storrutor |>
+  dplyr::mutate(geometry = map2(easting, northing, \(x,y) grid_cell(x, y, 50000, 50000))) |>
+  st_as_sf(crs = 3021))
+
+system.time(ekorutor_sf2 <- ekorutor |>
+  dplyr::mutate(geometry = map2(easting, northing, \(x,y) grid_cell(x, y, 5000, 5000))) |>
+  st_as_sf(crs = 3021))
+
+system.time(fastighetsblad_sf2 <- fastighetsblad |>
+  dplyr::mutate(geometry = map2(easting, northing, \(x,y) grid_cell(x, y, 10000, 5000))) |>
+  st_as_sf(crs = 3006))
+
+all.equal(storrutor_sf, storrutor_sf2)
+all.equal(ekorutor_sf, ekorutor_sf2)
+all.equal(fastighetsblad_sf, fastighetsblad_sf2)
 
 mapview::mapview(storrutor_sf)
 mapview::mapview(ekorutor_sf)
