@@ -37,6 +37,9 @@ usethis::create_github_token()
 use_readme_rmd()
 build_readme()
 
+# Ignore ----
+usethis::use_build_ignore(c("backup", "data-raw", "development", "examples"))
+
 # Document data:
 # https://r-pkgs.org/data.html
 
@@ -47,6 +50,8 @@ install_github("peterhellstrom/eagles")
 library(eagles)
 
 ## Data sets ----
+usethis::use_data_raw()
+
 storrutor
 ekorutor
 fastighetsblad
