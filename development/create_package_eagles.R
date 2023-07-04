@@ -59,14 +59,19 @@ wms_layers_data
 tms_layers_data
 
 storrutor |>
-  st_as_sf(coords = c("easting", "northing"), crs = 3021)
+  st_as_sf(coords = c("easting", "northing"), crs = 3021) |>
+  mapview::mapview()
 
 storrutor |>
-  index_to_sf(easting, northing, 50000, 50000, 3021)
+  mutate(geometry = map2(easting, northing, \(x, y) grid_cell(x, y, 50000, 50000))) |>
+  st_as_sf(crs = 3021) |>
+  mapview::mapview()
 
 ## Functions ----
 # How should functions be written - include source package in code?
 # Use native pipe or not?
+# https://usethis.r-lib.org/reference/use_pipe.html
+
 # Depends in DESCRIPTION file - loads all packages, can this be avoided?
 # Can Imports be used?
 tmp <- function(.x, ...) {
@@ -79,5 +84,3 @@ ekorutor %>% tmp(ruta_id)
 round_up(9.45)
 lm_basemaps()
 swe_tiles(tile_providers = tms_layers_data)
-index_to_sf(storrutor, easting, northing, 50000, 50000, 3021) %>%
-  mapview::mapview()
