@@ -30,7 +30,7 @@ grid_polygons <- function(x_range, y_range, delta_x, delta_y, crs, order = "cloc
 # xy22 <- st_make_grid(st_bbox(xy1), cellsize = 5000)
 # xy23 <- st_make_grid(offset = c(1200000, 6100000), n = c(140, 320), cellsize = 5000, crs = 3847)
 #
-# # RT90 2.5 gon V (EPSG:3021) ----
+# RT90 2.5 gon V (EPSG:3021)
 # g_3021 <- map(c(50000, 25000, 5000), ~ grid_polygons(
 #   x_range = c(1200000, 1900000), y_range = c(6100000, 7700000),
 #   delta_x = .x, delta_y = .x,
@@ -39,18 +39,38 @@ grid_polygons <- function(x_range, y_range, delta_x, delta_y, crs, order = "cloc
 # lengths(g_3021)
 
 #' @export
-grid_cell <- function(x, y, delta_x, delta_y, order = "clockwise") {
-  if (order == "clockwise") {
-    x <- list(matrix(c(x, y, x, y + delta_y, x + delta_x, y + delta_y, x + delta_x, y, x, y),
-                     nrow = 5, ncol = 2, byrow = TRUE))
+grid_cell <- function(
+    x_min, y_min,
+    delta_x, delta_y,
+    direction = c("clockwise", "counter-clockwise")) {
+
+  direction <- match.arg(direction)
+
+  x_max <- x_min + delta_x
+  y_max <- y_min + delta_y
+
+  if (direction == "clockwise") {
+    xy_vec <-
+      c(x_min, y_min,
+        x_min, y_max,
+        x_max, y_max,
+        x_max, y_min,
+        x_min, y_min)
   } else {
-    x <- list(matrix(c(x, y, x + delta_x, y, x + delta_x, y + delta_y, x, y + delta_y, x, y),
-                     nrow = 5, ncol = 2, byrow = TRUE))
+    xy_vec <-
+      c(x_min, y_min,
+        x_max, y_min,
+        x_max, y_max,
+        x_min, y_max,
+        x_min, y_min)
   }
 
-  sf::st_polygon(x)
+  sf::st_polygon(
+    list(
+      matrix(xy_vec, nrow = 5, ncol = 2, byrow = TRUE)))
 }
-# grid_cell(1300000, 6100000, 50000, 50000)
+# grid_cell(1300000, 6100000, 50000, 50000, direction = "clockwise")
+# grid_cell(1300000, 6100000, 50000, 50000, direction = "counter-clockwise")
 
 #' @export
 grid_parms <- function(
@@ -100,13 +120,22 @@ st_bbox_round <- function(.x, .size) {
 
 #' @export
 extract_lower_left <- function(.data, .grp = L2) {
-  .data %>%
-    st_coordinates() %>%
-    as_tibble() %>%
-    group_by({{.grp}}) %>%
-    arrange(X, Y) %>%
-    slice_head() %>%
-    rename_with(tolower) %>%
+  .data |>
+    st_coordinates() |>
+    as_tibble() |>
+    group_by({{.grp}}) |>
+    arrange(X, Y) |>
+    slice_head() |>
+    ungroup() |>
+    rename_with(tolower)
+}
+
+#' @export
+extract_lower_left_2 <- function(.data, .grp = ruta) {
+  .data |>
+    st_cast("POINT") |>
+    group_by({{ .grp }}) |>
+    slice_head() |>
     ungroup()
 }
 

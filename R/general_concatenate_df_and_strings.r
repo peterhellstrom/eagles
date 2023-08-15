@@ -59,7 +59,9 @@ str_c_unique <- function(.x, collapse = "; ", sort = FALSE,
 
 # But...on the other hand - is a specific function
 # really necessary? See alternatives below.
-# Better to combine str_c with str_unique and na.omit
+# Better to combine str_c with str_unique and na.omit?
+# str_c works best with mutate(), str_flatten is the
+# better function to use in combination with summarize()
 
 # z %>%
 #   group_by(grp) %>%

@@ -12,5 +12,5 @@
 #'   \item{northing, easting}{Geographic coordinates in EPSG:3021 of lower left corner of grid cell}
 #'   ...
 #' }
-#' @source ## Grid cells name were extracted from the Swedish Land Survey Data software Kartex, discointinued in 2015.
+#' @source ## Grid cells name were extracted from the Swedish Land Survey Data software Kartex, discontinued in 2015.
 "storrutor"

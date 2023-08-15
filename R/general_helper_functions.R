@@ -41,6 +41,7 @@ get_digits <- function(.x) {
   floor(log10(.x)) + 1
 }
 
+# get_member can be replacved by stringr::str_split_i()
 #' @export
 get_member <- function(.x, sep = ",", pos = 1) {
   sapply(strsplit(.x, sep), '[', pos)
@@ -95,6 +96,10 @@ cut2 <- function(x, breaks = NULL, by = 5) {
 # add_timestamp <- function(.x, sep = "_") {
 #   str_c(.x, format(Sys.time(), "%Y%m%d_%H%M%S"), sep = sep)
 # }
+
+# add_timestamp mimics utils::timestamp
+# utils::timestamp(stamp = format(Sys.time(), "%Y%m%d_%H%M%S"),
+# prefix = "", suffix = "", quiet = TRUE)
 
 #' @export
 add_timestamp <- function(.x, sep = "_") {

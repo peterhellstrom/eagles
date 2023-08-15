@@ -75,11 +75,11 @@ storrutor |>
 # Depends in DESCRIPTION file - loads all packages, can this be avoided?
 # Can Imports be used?
 tmp <- function(.x, ...) {
-  .x %>%
+  .x |>
     dplyr::select(...)
 }
 
-ekorutor %>% tmp(ruta_id)
+ekorutor |> tmp(ruta_id)
 
 round_up(9.45)
 lm_basemaps()

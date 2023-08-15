@@ -73,36 +73,49 @@ format_fastighetsruta(.x)
 
 fastighetsblad <- readxl::read_xlsx(
   grid_cell_file,
-  sheet = "Fastighet_SWEREF99_TM", col_types = "text") |>
+  sheet = "Fastighet_SWEREF99_TM",
+  col_types = "text") |>
   dplyr::mutate(
     blad = format_fastighetsblad(blad_id),
     ruta = format_fastighetsruta(blad_id),
     ruta_del = stringr::str_sub(blad_id, -1)) |>
   dplyr::relocate(blad, .after = blad_id) |>
-  tidyr::separate(ruta, into = c("northing", "easting"),
-                  sep = "_", remove = FALSE) |>
+  tidyr::separate(
+    ruta, into = c("northing", "easting"),
+    sep = "_", remove = FALSE) |>
   dplyr::mutate(
-    northing = stringr::str_pad(northing, width = 7, pad = "0", side = "right"),
-    easting = stringr::str_pad(easting, width = 6, pad = "0", side = "right"),
+    northing = stringr::str_pad(
+      northing,
+      width = 7, pad = "0", side = "right"),
+    easting = stringr::str_pad(
+      easting,
+      width = 6, pad = "0", side = "right"),
     dplyr::across(northing:easting, as.numeric),
     northing = dplyr::case_when(
       ruta_del == "N" ~ northing + 5000,
-      TRUE ~ northing)) |>
+      .default = northing)) |>
   dplyr::relocate(ruta_del, .after = ruta) |>
   dplyr::arrange(ruta, northing)
 
 # Check that grid are "spatiall correct" by creating mapviews ----
 ## Convert to spatial objects ----
 storrutor_sf <- storrutor |>
-  dplyr::mutate(geometry = purrr::map2(easting, northing, \(x,y) eagles::grid_cell(x, y, 50000, 50000))) |>
+  dplyr::mutate(
+    geometry = purrr::map2(
+      easting, northing,
+      \(x,y) eagles::grid_cell(x, y, 50000, 50000))) |>
   sf::st_as_sf(crs = 3021)
 
 ekorutor_sf <- ekorutor |>
-  dplyr::mutate(geometry = purrr::map2(easting, northing, \(x,y) eagles::grid_cell(x, y, 5000, 5000))) |>
+  dplyr::mutate(geometry = purrr::map2(
+    easting, northing,
+    \(x,y) eagles::grid_cell(x, y, 5000, 5000))) |>
   sf::st_as_sf(crs = 3021)
 
 fastighetsblad_sf <- fastighetsblad |>
-  dplyr::mutate(geometry = purrr::map2(easting, northing, \(x,y) eagles::grid_cell(x, y, 10000, 5000))) |>
+  dplyr::mutate(geometry = purrr::map2(
+    easting, northing,
+    \(x,y) eagles::grid_cell(x, y, 10000, 5000))) |>
   sf::st_as_sf(crs = 3006)
 
 mapview::mapview(storrutor_sf)
