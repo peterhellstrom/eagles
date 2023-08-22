@@ -1,13 +1,13 @@
 # Höjddata ----
 #' @export
 extract_ruta_100 <- function(x) {
-  str_c(str_sub(x, 1, 2), str_sub(x, 5, 5), sep = "_")
+  stringr::str_c(stringr::str_sub(x, 1, 2), stringr::str_sub(x, 5, 5), sep = "_")
 }
 
 #' @export
 extract_coords_from_ruta_5 <- function(x) {
-  ymin <- str_c(str_sub(x, 1, 3), str_sub(x, 8, 8), "000")
-  xmin <- str_c(str_sub(x, 5, 6) , str_sub(x, 9, 9), "000")
+  ymin <- stringr::str_c(stringr::str_sub(x, 1, 3), stringr::str_sub(x, 8, 8), "000")
+  xmin <- stringr::str_c(stringr::str_sub(x, 5, 6) , stringr::str_sub(x, 9, 9), "000")
   data.frame(
     xmin = as.numeric(xmin),
     ymin = as.numeric(ymin))
@@ -19,7 +19,7 @@ lm_hojdmodell_url <- function(
     crs, xmin, ymin, xmax, ymax,
     url_base = "https://download-ver.lantmateriet.se/hojdmodell/wcs/v1") {
 
-  modify_url(
+  httr::modify_url(
     url = url_base,
     query = list(
       service = "WCS",
@@ -40,30 +40,29 @@ lm_hojdmodell_prepare <- function(
     .x, ruta = ruta_5, dx = 5000, dy = 5000,
     main_dir = NULL) {
 
-  p <- .x %>%
-    mutate(
+  .x |>
+    dplyr::mutate(
       ruta_100 = extract_ruta_100({{ruta}}),
       crs = 3006,
       extract_coords_from_ruta_5({{ruta}}),
       xmax = xmin + dx,
-      ymax = ymin + dy) %>%
-    rowwise() %>%
-    mutate(
-      file_dl = str_c(main_dir, ruta_100, str_c(ruta_5, ".tif"), sep = "/"),
-      url_dl = lm_hojdmodell_url(crs = crs, xmin = xmin, ymin = ymin,
-                              xmax = xmax, ymax = ymax))
+      ymax = ymin + dy) |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      file_dl = stringr::str_c(main_dir, ruta_100, stringr::str_c(ruta_5, ".tif"), sep = "/"),
+      url_dl = lm_hojdmodell_url(
+        crs = crs, xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax))
 
-  return(p)
 }
 
 #' @export
 lm_hojdmodell_prepare_sf <- function(
     .x, dx = 5000, dy = 5000, crs = 3006) {
-  map2(
+  purrr::map2(
     .x$xmin, .x$ymin,
-    ~ grid_cell(.x, .y, delta_x = dx, delta_y = dy)) %>%
-    st_sfc(crs = crs) %>%
-    st_sf(.x, geometry = .)
+    \(x, y) grid_cell(x, y, delta_x = dx, delta_y = dy)) |>
+    sf::st_sfc(crs = crs) |>
+    sf::st_sf(.x, geometry = _)
 }
 
 #' @export
@@ -73,17 +72,17 @@ lm_hojdmodell_download <- function(
     password = Sys.getenv("lm_atkomst_ver_pwd")) {
 
   # Create download directories
-  dl_dirs <- .x %>%
-    select(file_dl) %>%
-    mutate(file_dl = dirname(file_dl)) %>%
-    distinct() %>%
-    pull()
+  dl_dirs <- .x |>
+    dplyr::select(file_dl) |>
+    dplyr::mutate(file_dl = dirname(file_dl)) |>
+    dplyr::distinct() |>
+    dplyr::pull()
 
   fs::dir_create(dl_dirs)
 
   # Download data
   # Does remotes::download has an overwrite option?
-  walk2(
+  purrr::walk2(
     .x = .x$url_dl,
     .y = .x$file_dl,
     ~ remotes:::download(
@@ -97,14 +96,14 @@ lm_hojdmodell_download <- function(
 # create virtual raster (vrt) from downloaded tif-files
 #' @export
 lm_hojdmodell_vrt <- function(
-    data,
+    .data,
     main_dir,
     out_vrt) {
 
-  data %>%
-    hojdmodell_prepare(main_dir = main_dir) %>%
-    filter(file_exists(file_dl)) %>%
-    pull(file_dl) %>%
+  .data |>
+    hojdmodell_prepare(main_dir = main_dir) |>
+    dplyr::filter(file_exists(file_dl)) |>
+    dplyr::pull(file_dl) %>%
     gdalbuildvrt(out_vrt) %>%
     gdalinfo(mm = TRUE, stats = TRUE, hist = TRUE)
 }
@@ -134,10 +133,12 @@ lm_get_token <- function(
 # Markhöjd Direkt ----
 #' @export
 lm_markhojd_point <- function(
-    url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd/3006",
-    token, east, north,
+    east,
+    north,
     altitude_only = FALSE,
-    as = "text") {
+    as = "text",
+    url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd/3006",
+    token = content(lm_get_token())$access_token) {
 
   out <- GET(
     url = file.path(url, east, north),
@@ -153,11 +154,11 @@ lm_markhojd_point <- function(
 
 #' @export
 lm_markhojd_geometry <- function(
-    url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd",
-    token,
     geometry,
     encode = "raw",
-    as = "text") {
+    as = "text",
+    url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd",
+    token = content(lm_get_token())$access_token) {
 
   out <- POST(
     url = url,
@@ -176,10 +177,10 @@ lm_markhojd_geometry <- function(
 
 #' @export
 lm_ortnamn_kriterier <- function(
-    url = "https://api.lantmateriet.se/distribution/produkter/ortnamn/v2.1",
-    token,
     query,
-    as = "text") {
+    as = "text",
+    url = "https://api.lantmateriet.se/distribution/produkter/ortnamn/v2.1",
+    token = content(lm_get_token())$access_token) {
 
   out <- GET(
     url = modify_url(file.path(url, "kriterier"), query = query),
@@ -235,12 +236,17 @@ lm_ortnamn_unnest_parsed <- function(x) {
 
 # Wrapper function
 #' @export
-lm_ortnamn_coords <- function(token, easting, northing, crs = 3006) {
+lm_ortnamn_coords <- function(
+    easting,
+    northing,
+    crs = 3006,
+    token = content(lm_get_token())$access_token) {
+
   lm_ortnamn_kriterier(
     token = token,
     query = list(
       punkt = str_c(northing, easting, sep = ","),
       punktSrid = crs),
-    as = "parsed") %>%
+    as = "parsed") |>
     lm_ortnamn_unnest_parsed()
 }

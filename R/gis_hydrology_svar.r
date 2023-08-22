@@ -25,8 +25,9 @@ daro_flode <- function(aroid, direction = c("down", "up")) {
       aroid <- daro_d[daro_d$"AROID" == aroid,]$OMRID_NED
       i <- i + 1
       out[[i]] <- aroid }
-    # Remove final AROID, since this is (always) in the Sea
-    head(unlist(out), -1) }
+    # Remove final AROID, since this is (always) in the sea
+    head(unlist(out), -1)
+  }
 
   else if (direction == "up") {
     while (!rlang::is_empty(aroid)) {
@@ -34,7 +35,8 @@ daro_flode <- function(aroid, direction = c("down", "up")) {
       i <- i + 1
       out[[i]] <- aroid }
 
-    unlist(out) }
+    unlist(out)
+  }
 }
 
 # Extrahera polygoner från delavrinningsområden i flödesordning ----
@@ -43,10 +45,10 @@ daro_flode <- function(aroid, direction = c("down", "up")) {
 
 #' @export
 daro_flode_sf <- function(.x) {
-  daro %>%
-    slice(match(.x, daro %>% pull(AROID))) %>%
-    mutate(FLODEID = row_number()) %>%
-    relocate(FLODEID)
+  daro |>
+    dplyr::slice(base::match(.x, daro |>  dplyr::pull(AROID))) |>
+    dplyr::mutate(FLODEID = dplyr::row_number()) |>
+    dplyr::relocate(FLODEID)
 }
 
 # Gruppera avrinningsområden, baserat på attribut ----
@@ -60,24 +62,24 @@ aroid_group <- function(.x) {
   x <- lapply(.x$grans_aroid, daro_flode, direction = "up")
   names(x) <- .x$grans_aroid
 
-  x <- enframe(x, name = "grans_aroid", value = "AROID") %>%
-    unnest(cols = AROID) %>%
-    inner_join(.x, by = "grans_aroid")
+  x <- tibble::enframe(x, name = "grans_aroid", value = "AROID") |>
+    tidyr::unnest(cols = AROID) |>
+    dplyr::inner_join(.x, dplyr::join_by(grans_aroid))
 
-  x_s <- x %>%
-    group_by(AROID) %>%
-    arrange(AROID) %>%
+  x_s <- x |>
+    dplyr::group_by(AROID) |>
+    dplyr::arrange(AROID) |>
     # varje ID får endast förekomma en gång,
     # ==> polygoner ska inte överlappa.
     # jmf mot SVARO som har överlappande polygoner
     # vilken polygon som har överordnad prioritet anges av fältet ordn
     # (hur fältet ordn ska definieras bör beskrivas...)
-    slice_min(ordn, n = 1) %>%
-    ungroup()
+    dplyr::slice_min(ordn, n = 1) |>
+    dplyr::ungroup()
 
-  x_daro <- daro %>%
-    inner_join(x_s, by = "AROID")
-  #group_by(test_name) # group_by renders error message in ms_dissolve
+  x_daro <- daro |>
+    dplyr::inner_join(x_s, dplyr::join_by(AROID))
+  # dplyr::group_by(test_name) # group_by renders error message in ms_dissolve
   x_daro
 }
 
@@ -87,14 +89,13 @@ aroid_group <- function(.x) {
 # Var tidigare namn, men det funkar ju inte om två olika områden
 # har samma namn, ändrade till grans_aroid
 #' @export
-aroid_group_dissolve <- function(.x, .x_attr, .field = "grans_aroid") {
-  x_daro_dslv <- .x %>%
-    rmapshaper::ms_dissolve(field = .field) %>%
-    inner_join(.x_attr, by = .field) %>%
-    arrange(grupp, ordn) %>%
-    mutate(area = st_area(.)) %>%
-    mutate(area = set_units(area, km^2))
-  x_daro_dslv
+aroid_group_dissolve <- function(.x, .x_attr, .field = grans_aroid) {
+  .x |>
+    rmapshaper::ms_dissolve(field = .field) |>
+    dplyr::inner_join(.x_attr, join_by({{.field}})) |>
+    dplyr::arrange(grupp, ordn) |>
+    dplyr::mutate(area = sf::st_area(.)) |>
+    dplyr::mutate(area = units::set_units(area, km^2))
 }
 
 ## Havsområden ----
@@ -114,35 +115,36 @@ aroid_group_dissolve <- function(.x, .x_attr, .field = "grans_aroid") {
 # som tangerar kanterna på polygonerna. Samma gäller för sfheaders::sf_remove_holes
 # som annars är en snabbare funktion.
 #' @export
-havso_combine_by_id <- function(havso, daro, hid,
-                                union = TRUE,
-                                union_method = c("union", "dissolve")) {
+havso_combine_by_id <- function(
+    havso, daro, hid,
+    union = TRUE,
+    union_method = c("union", "dissolve")) {
 
   union_method <- match.arg(union_method)
 
-  havso_sel <- havso %>%
-    filter(HID == hid)
+  havso_sel <- havso |>
+    dplyr::filter(HID == hid)
 
-  daro_sel <- daro %>%
-    filter(OMRID_NED == hid) %>%
-    rename(c("HID" = "OMRID_NED"))
+  daro_sel <- daro |>
+    dplyr::filter(OMRID_NED == hid) |>
+    dplyr::rename(c("HID" = "OMRID_NED"))
 
-  havso_daro_sel <- bind_rows(havso_sel, daro_sel) %>%
-    fill(TYP_NFS06, TYPOMRKUST)
+  havso_daro_sel <- dplyr::bind_rows(havso_sel, daro_sel) |>
+    tidyr::fill(TYP_NFS06, TYPOMRKUST)
 
   if (union) {
     if (union_method == "union") {
-      havso_daro_sel <- havso_daro_sel %>%
-        st_snap(x = ., y = ., tolerance = 0.0001) %>%
-        st_union() %>%
-        st_sf() %>%
-        mutate(HID = hid)
+      havso_daro_sel <- havso_daro_sel |>
+        sf::st_snap(x = ., y = ., tolerance = 0.0001) |>
+        sf::st_union() |>
+        sf::st_sf() |>
+        dplyr::mutate(HID = hid)
 
     } else if (union_method == "dissolve") {
-      havso_daro_sel <- havso_daro_sel %>%
-        st_snap(x = ., y = ., tolerance = 0.0001) %>%
-        rmapshaper::ms_dissolve(field = "HID") %>%
-        mutate(HID = hid)
+      havso_daro_sel <- havso_daro_sel |>
+        sf::st_snap(x = ., y = ., tolerance = 0.0001) |>
+        rmapshaper::ms_dissolve(field = "HID") |>
+        dplyr::mutate(HID = hid)
     }
   }
 

@@ -39,7 +39,8 @@ db_connect_to_access_string <- function (access.file, uid = "", pwd = "", ...) {
 
 #' @export
 db_connect_to_access <- function(db_file_path,
-	uid = "", pwd = "",
+	uid = "",
+	pwd = "",
 	encoding = "",
 	package = c("RODBC", "DBI"), ...)  {
 

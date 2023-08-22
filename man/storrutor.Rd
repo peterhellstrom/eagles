@@ -18,7 +18,7 @@ A data frame with 252 rows and 5 columns, 50 x 50 km grid cells covering Sweden 
 }
 }
 \source{
-\subsection{Grid cells name were extracted from the Swedish Land Survey Data software Kartex, discointinued in 2015.}{
+\subsection{Grid cells name were extracted from the Swedish Land Survey Data software Kartex, discontinued in 2015.}{
 }
 }
 \usage{

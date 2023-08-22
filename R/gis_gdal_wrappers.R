@@ -10,15 +10,15 @@ copy_from_gpkg <- function(
     rename(src_driver = driver)
 
   if (!is.null(filter_expr)) {
-    f <- f %>%
-      filter(str_detect(name, filter_expr))
+    f <- f |>
+      dplyr::filter(str_detect(name, filter_expr))
   }
 
-  f_copy <- f %>%
-    mutate(
-      command = case_when(
-        driver == "GPKG" ~ glue("ogr2ogr -f {driver} {dsn_destination} -a_srs EPSG:{srs_id} -overwrite {dsn_source} {name}"),
-        driver == "OpenFileGDB" ~ glue("ogr2ogr -f {driver} {dsn_destination} -a_srs EPSG:{srs_id} -overwrite {dsn_source} {name} -mapFieldType Integer64=Integer")
+  f_copy <- f |>
+    dplyr::mutate(
+      command = dplyr::case_when(
+        driver == "GPKG" ~ glue::glue("ogr2ogr -f {driver} {dsn_destination} -a_srs EPSG:{srs_id} -overwrite {dsn_source} {name}"),
+        driver == "OpenFileGDB" ~ glue::glue("ogr2ogr -f {driver} {dsn_destination} -a_srs EPSG:{srs_id} -overwrite {dsn_source} {name} -mapFieldType Integer64=Integer")
       ))
 
 
@@ -26,6 +26,6 @@ copy_from_gpkg <- function(
 
   # Or send as one command to cmd
   # (Check https://stackoverflow.com/questions/8055371/how-do-i-run-two-commands-in-one-line-in-windows-cmd)
-  cmd_n <- str_c(f_copy$command, collapse = " & ")
+  cmd_n <- stringr::str_c(f_copy$command, collapse = " & ")
   system(command = "cmd.exe", input = cmd_n, show.output.on.console = TRUE)
 }

@@ -4,7 +4,11 @@
 # grid_polygons generates a grid
 # requires: sf
 #' @export
-grid_polygons <- function(x_range, y_range, delta_x, delta_y, crs, order = "clockwise") {
+grid_polygons <- function(
+    x_range, y_range,
+    delta_x, delta_y,
+    crs,
+    order = "clockwise") {
 
 	n_x <- (max(x_range) - min(x_range)) / delta_x
 	n_y <- (max(y_range) - min(y_range)) / delta_y
@@ -13,7 +17,7 @@ grid_polygons <- function(x_range, y_range, delta_x, delta_y, crs, order = "cloc
 		x = seq(min(x_range), by = delta_x, length.out = n_x),
 		y = seq(min(y_range), by = delta_y, length.out = n_y))
 
-	m <- map2(
+	m <- purrr::map2(
 	  grid_corners$x, grid_corners$y,
 	  ~ grid_cell(.x, .y, delta_x = delta_x, delta_y = delta_y, order = order))
 
@@ -106,7 +110,7 @@ round_coords <- function(.x, g, centroid = FALSE) {
 #' @export
 st_bbox_round <- function(.x, .size) {
   if (class(.x)[1] == "sf") {
-    .x <- st_bbox(.x)
+    .x <- sf::st_bbox(.x)
   }
   if (class(.x)[1] == "bbox") {
     .x[1:4] <- c(
@@ -121,37 +125,37 @@ st_bbox_round <- function(.x, .size) {
 #' @export
 extract_lower_left <- function(.data, .grp = L2) {
   .data |>
-    st_coordinates() |>
-    as_tibble() |>
-    group_by({{.grp}}) |>
-    arrange(X, Y) |>
-    slice_head() |>
-    ungroup() |>
-    rename_with(tolower)
+    sf::st_coordinates() |>
+    tibble::as_tibble() |>
+    dplyr::group_by({{.grp}}) |>
+    dplyr::arrange(X, Y) |>
+    dplyr::slice_head() |>
+    dplyr::ungroup() |>
+    dplyr::rename_with(tolower)
 }
 
 #' @export
 extract_lower_left_2 <- function(.data, .grp = ruta) {
   .data |>
-    st_cast("POINT") |>
-    group_by({{ .grp }}) |>
-    slice_head() |>
-    ungroup()
+    sf::st_cast("POINT") |>
+    dplyr::group_by({{ .grp }}) |>
+    dplyr::slice_head() |>
+    dplyr::ungroup()
 }
 
 #' @export
 gdaltindex <- function(file_name, file_list) {
 
-  file_conn <- file(glue("{file_name}.txt"))
+  file_conn <- file(glue::glue("{file_name}.txt"))
   writeLines(file_list, file_conn)
   close(file_conn)
 
   system(
     command = "cmd.exe",
-    input = glue("gdaltindex -f GPKG {file_name}.gpkg --optfile {file_name}.txt"),
+    input = glue::glue("gdaltindex -f GPKG {file_name}.gpkg --optfile {file_name}.txt"),
     show.output.on.console = TRUE)
 
-  unlink(glue("{file_name}.txt"))
+  unlink(glue::glue("{file_name}.txt"))
 }
 
 #' @export
@@ -164,7 +168,7 @@ layout_grid_size <- function(
 
   layout_scale <- map_scale / overlap
 
-  layout_scale <- case_when(
+  layout_scale <- dplyr::case_when(
     round == TRUE ~ round(layout_scale, 0),
     TRUE ~ layout_scale)
 
@@ -173,6 +177,7 @@ layout_grid_size <- function(
   delta_x <- map_frame_x / (100 * overlap / map_scale)
   delta_y <- map_frame_y / (100 * overlap / map_scale)
 
+  # Should output be data.frame instead of a vector, c()
   c(
     map_scale = map_scale,
     layout_scale = layout_scale,
@@ -193,7 +198,8 @@ add_grid_neighbours <- function(
 
   map_grid <- map_grid %>%
     bind_cols(
-      map_dfr(seq_len(nrow(map_grid)), ~ st_bbox(map_grid[.x,])[1:4]))
+      map_dfr(
+        seq_len(nrow(map_grid)), ~ st_bbox(map_grid[.x,])[1:4]))
 
   map_grid <- map_grid %>%
     mutate(

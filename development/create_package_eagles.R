@@ -67,20 +67,6 @@ storrutor |>
   st_as_sf(crs = 3021) |>
   mapview::mapview()
 
-## Functions ----
-# How should functions be written - include source package in code?
-# Use native pipe or not?
-# https://usethis.r-lib.org/reference/use_pipe.html
-
-# Depends in DESCRIPTION file - loads all packages, can this be avoided?
-# Can Imports be used?
-tmp <- function(.x, ...) {
-  .x |>
-    dplyr::select(...)
-}
-
-ekorutor |> tmp(ruta_id)
-
 round_up(9.45)
 lm_basemaps()
 swe_tiles(tile_providers = tms_layers_data)

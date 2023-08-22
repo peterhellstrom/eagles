@@ -24,12 +24,14 @@ sfc_as_cols <- function(x, geometry, names = c("x","y"), drop_geometry = FALSE) 
 #' @export
 st_add_geom_column <- function(.x, coords, crs = 3006) {
   .x |>
-    st_as_sf(coords = {{coords}}, crs = crs) |>
-    st_geometry()
+    sf::st_as_sf(coords = {{coords}}, crs = crs) |>
+    sf::st_geometry()
 }
 
 #' @export
-st_add_geom_column_round <- function(.x, .g, .g_names, centroid = TRUE, crs = 3006) {
+st_add_geom_column_round <- function(
+    .x, .g, .g_names,
+    centroid = TRUE, crs = 3006) {
 
   for (i in seq_along(.g)) {
     .x_coords <- st_coordinates(.x) %>%
@@ -53,7 +55,7 @@ st_extract_pt_coords <- function (.x) {
     # Check if input geometry type is point, if not convert to point geometry type by
     # extracting centroid. This may not be the appropriate behavior?
     if (!inherits(st_geometry(.x), "sfc_POINT")) {
-      .x <- st_centroid(.x)
+      .x <- sf::st_centroid(.x)
     }
     crs <- sf::st_crs(.x)$epsg
     .xy <- sf::st_coordinates(.x)
@@ -66,13 +68,15 @@ st_extract_pt_coords <- function (.x) {
 # Todo: check function in rmapshaper, e.g. ms_erase and ms_dissolve
 # Note check the erase function rmapshaper::ms_erase
 #' @export
-st_erase <- function(x, y) st_difference(x, st_union(st_combine(y)))
+st_erase <- function(x, y) {
+  sf::st_difference(x, sf::st_union(sf::st_combine(y)))
+}
 
 #' @export
 st_filter = function(.x, .y, .pred = st_intersects) {
   # this is equal to .x[.y, op = st_intersects]
   # check that dplyr is loaded, then
-  filter(.x, lengths(.pred(.x, .y)) > 0)
+  dplyr::filter(.x, lengths(.pred(.x, .y)) > 0)
 }
 
 #' @export
@@ -113,15 +117,16 @@ gpkg_contents <- function(.x) {
 
 #' @export
 copy_layer <- function(.from_dsn, .from_layer, .to_dsn, .to_layer = .from_layer, ...) {
-  x <- st_read(.from_dsn, .from_layer)
-  st_write(x, .to_dsn, .to_layer, ...)
+  x <- sf::st_read(.from_dsn, .from_layer)
+  sf::st_write(x, .to_dsn, .to_layer, ...)
 }
 
 #' @export
-copy_layer_arc <- function(.from_dsn, .from_layer, .to_dsn, .to_layer = .from_layer,
-                           .feature_dataset = NULL, overwrite = TRUE, validate = TRUE) {
+copy_layer_arc <- function(
+    .from_dsn, .from_layer, .to_dsn, .to_layer = .from_layer,
+    .feature_dataset = NULL, overwrite = TRUE, validate = TRUE) {
 
-  x <- st_read(.from_dsn, .from_layer)
+  x <- sf::st_read(.from_dsn, .from_layer)
   if (is.null(.feature_dataset) ) {
     p <- file.path(.to_dsn, .to_layer) }
   else {
@@ -205,9 +210,9 @@ stdh_cast_substring <- function(x, to = "MULTILINESTRING") {
 #' @export
 split_holes <- function(.data, .crs = 3006, .area_unit = "km^2") {
   # Extract coordinates
-  out <- st_coordinates(.data) %>%
-    as_tibble() %>%
-    group_by(L1)
+  out <- sf::st_coordinates(.data) |>
+    tibble::as_tibble() |>
+    dplyr::group_by(L1)
 
   if (n_groups(out) > 0) {
 
@@ -215,20 +220,21 @@ split_holes <- function(.data, .crs = 3006, .area_unit = "km^2") {
       # Split into separate lists
       group_split() %>%
       # Convert to sf-object, polygons
-      map(~ select(., X, Y) %>%
+      purrr::map(~ dplyr::select(., X, Y) %>%
             as.matrix() %>%
             list(.) %>%
-            st_polygon() %>%
-            st_sfc(crs = .crs) %>%
-            st_sf())
+            sf::st_polygon() %>%
+            sf::st_sfc(crs = .crs) %>%
+            sf::st_sf()
+          )
 
     out <- out %>%
       # Bind all polygons together
-      bind_rows() %>%
+      dplyr::bind_rows() %>%
       # Calculate area of each polygon
-      mutate(Area = st_area(.)) %>%
+      dplyr::mutate(Area = st_area(.)) %>%
       # Set units
-      mutate(Area = units::set_units(Area, .area_unit, mode = "standard")) %>%
+      dplyr::mutate(Area = units::set_units(Area, .area_unit, mode = "standard")) %>%
       # Sort in descending order based on area
       arrange(desc(Area))
 
