@@ -1,12 +1,12 @@
 # https://r-pkgs.org
 
-#devtools::install_github("r-lib/devtools")
-#devtools::install_github("r-lib/usethis")
+# devtools::install_github("r-lib/devtools")
+# devtools::install_github("r-lib/usethis")
 
-#library(devtools) # added to .Rprofile startup file
+# library(devtools) # added to .Rprofile startup file
 
-#p <- "W:/projects/R/eagles"
-#usethis::create_package(p, check_name = FALSE)
+# p <- "W:/projects/R/eagles"
+# usethis::create_package(p, check_name = FALSE)
 
 load_all()
 
@@ -23,7 +23,7 @@ test()
 # Document data:
 # https://r-pkgs.org/data.html
 
-#usethis::create_package(p, check_name = FALSE)
+# usethis::create_package(p, check_name = FALSE)
 
 usethis::use_mit_license()
 
@@ -45,7 +45,6 @@ usethis::use_build_ignore(c("backup", "data-raw", "development", "examples"))
 
 install_github("peterhellstrom/eagles")
 
-
 ## Load package ----
 library(eagles)
 
@@ -57,6 +56,7 @@ ekorutor
 fastighetsblad
 wms_layers_data
 tms_layers_data
+rc_species_list
 
 storrutor |>
   st_as_sf(coords = c("easting", "northing"), crs = 3021) |>
@@ -67,6 +67,7 @@ storrutor |>
   st_as_sf(crs = 3021) |>
   mapview::mapview()
 
-round_up(9.45)
-lm_basemaps()
-swe_tiles(tile_providers = tms_layers_data)
+eagles::round_up(9.45)
+eagles::lm_basemaps()
+eagles::swe_tiles(tile_providers = tms_layers_data)
+eagles::rc_species_list()

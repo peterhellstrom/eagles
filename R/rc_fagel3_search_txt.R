@@ -1,14 +1,4 @@
-rc_artlista <- function(
-    path = "W:/projects/data/ringing/KodlistaF3-230322.mdb",
-    query = "SELECT * FROM Artlista",
-    package = "DBI") {
-
-  con <- eagles::db_connect_to_access(path, package = package)
-  x <- DBI::dbGetQuery(con, query) |> tibble::as_tibble()
-  DBI::dbDisconnect(con)
-  x
-}
-
+#' @export
 rc_data_search_txt <- function(
     pattern,
     path_pattern = ".*RCdata\\.txt$",
@@ -26,6 +16,7 @@ rc_data_search_txt <- function(
 
 }
 
+#' @export
 rc_ringon_search_txt <- function (
     species_code,
     year = NULL,
@@ -77,8 +68,9 @@ rc_ringon_search_txt <- function (
   sites_tbl <- purrr::map_dfr(
     sites_files$file,
     \(x) {
-      sifr::sif(pattern = pattern_sites, path_pattern = x,
-                fixed = FALSE, markers = FALSE) |>
+      sifr::sif(
+        pattern = pattern_sites, path_pattern = x,
+        fixed = FALSE, markers = FALSE) |>
         tibble::as_tibble()
     }
   )
