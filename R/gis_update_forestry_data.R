@@ -66,31 +66,6 @@ list_files_compare <- function(
 }
 
 #' @export
-tmp_export_from_gpkg <- function(
-    layer_suffix,
-    dsn = "sks_avverkning_anmald",
-    layer_prefix = "sks_avverkning_anmald",
-    download_dir = "./downloads",
-    output_file = "sksAvverkAnm") {
-
-  # Read from GeoPackage
-  f_tmp <- sf::st_read(
-    stringr::str_c(dsn, ".gpkg"),
-    layer = glue::glue("{layer_prefix}_{layer_suffix}")
-  )
-  # Export to zip-file
-  zipfile <- rgee::ee_utils_shp_to_zip(
-    f_tmp,
-    file.path(download_dir, glue::glue("{output_file}.shp"))
-  )
-  # Rename zip-file
-  file.rename(
-    file.path(download_dir, glue("{output_file}.zip")),
-    file.path(download_dir, glue::glue("{output_file}_{layer_suffix}.zip"))
-  )
-}
-
-#' @export
 create_db_version_control <- function(
     .data,
     dsn_out,
@@ -150,9 +125,10 @@ create_db_version_control <- function(
 find_pending_db_updates <- function(
     start_date,
     dsn_out,
-    log_table_name = "log_data") {
+    log_table_name = "log_data",
+    ...) {
 
-  input_files <- list_files_compare() |>
+  input_files <- list_files_compare(...) |>
     dplyr::filter(created_date >= start_date)
 
   con <- DBI::dbConnect(RSQLite::SQLite(), dsn_out)
@@ -234,7 +210,7 @@ execute_db_updates <- function(
     dplyr::mutate(
       last_appearance = gsub(".zip$", "", original)
     ) |>
-    dplyr::arrange(Inkomdatum, Beteckn) |>
+    # dplyr::arrange(Inkomdatum, Beteckn) |>
     dplyr::select(last_appearance, Beteckn)
 
   # Should check number of updated rows here -
@@ -259,7 +235,8 @@ execute_db_updates <- function(
           first_appearance = gsub(".zip$", "", revised),
           last_appearance = NA_character_
         ) |>
-        dplyr::arrange(Inkomdatum, Beteckn),
+        dplyr::arrange(Beteckn),
+        # dplyr::arrange(Inkomdatum, Beteckn),
       dsn = dsn_out,
       layer = layer_out,
       append = TRUE)
@@ -293,4 +270,48 @@ execute_db_updates <- function(
   gc()
   qgisprocess::qgis_clean_result(result)
 
+}
+
+#' @export
+execute_db_updates_n <- function(.data, dsn_out, layer_out, ...) {
+  if (nrow(.data) > 0) {
+    purrr::walk(
+      #.x = 1:5, # test case
+      .x = base::seq_len(nrow(.data)),
+      \(x) {
+        execute_db_updates(
+          .data$original[x],
+          .data$revised[x],
+          dsn_out = dsn_out,
+          layer_out = layer_out,
+          ...
+        )
+      }
+    )
+  }
+}
+
+#' @export
+tmp_export_from_gpkg <- function(
+    layer_suffix,
+    dsn = "sks_avverkning_anmald",
+    layer_prefix = "sks_avverkning_anmald",
+    download_dir = "./downloads",
+    output_file = "sksAvverkAnm") {
+
+  # Read from GeoPackage
+  f_tmp <- sf::st_read(
+    stringr::str_c(dsn, ".gpkg"),
+    layer = glue::glue("{layer_prefix}_{layer_suffix}")
+  )
+  # Export to zip-file
+  zipfile <- rgee::ee_utils_shp_to_zip(
+    f_tmp,
+    file.path(download_dir, glue::glue("{output_file}.shp"))
+  )
+  # Rename zip-file
+  file.rename(
+    file.path(download_dir, glue("{output_file}.zip")),
+    file.path(download_dir, glue::glue("{output_file}_{layer_suffix}.zip"))
+  )
 }

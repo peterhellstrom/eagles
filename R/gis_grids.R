@@ -19,7 +19,7 @@ grid_polygons <- function(
 
 	m <- purrr::map2(
 	  grid_corners$x, grid_corners$y,
-	  ~ grid_cell(.x, .y, delta_x = delta_x, delta_y = delta_y, order = order))
+	  \(x,y) grid_cell(x, y, delta_x = delta_x, delta_y = delta_y, order = order))
 
 	sf::st_sfc(m, crs = crs)
 }

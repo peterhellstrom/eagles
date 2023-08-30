@@ -13,9 +13,9 @@ wtse_lkd <- function(
     add_coordinates = FALSE,
     names = c("x", "y"),
     db_package = c("RODBC", "DBI"),
-    encoding = 'windows-1252',
+    encoding = "",
+    # encoding = "windows-1252",
     db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg") {
-	# requires: tidyverse, DBI, sf
 
   db_package <- match.arg(db_package)
 
@@ -47,65 +47,65 @@ wtse_lkd <- function(
 
   # "Läs in" data till variablerna x.
   # Exempel på vad som egentligen sker:
-  # assign("lkd_db", RODBC::sqlFetch(db_data_conn, "tLokaler") %>% as_tibble(), envir = parent.frame(n = 2))
+  # assign("lkd_db", RODBC::sqlFetch(db_data_conn, "tLokaler") |> tibble::as_tibble(), envir = parent.frame(n = 2))
   # Men detta steg funkar inte i R 4.3.0, behöver sätta parent.frame(n = 3). Varför?
-  pmap(l, function(x, y) {
-    assign(x, db_f(db_data_conn, y) %>% as_tibble(),
-           envir = parent.frame(n = 3)) })
+  purrr::pmap(l, function(x, y) {
+    base::assign(x, db_f(db_data_conn, y) |> tibble::as_tibble(),
+           envir = base::parent.frame(n = 3)) })
 
   if (db_package == "RODBC") {
-    lkd_db <- lkd_db %>% mutate(BoplatsOkand = as.logical(BoplatsOkand == 1))
+    lkd_db <- lkd_db |> dplyr::mutate(BoplatsOkand = base::as.logical(BoplatsOkand == 1))
   }
 
   # Underlokaler
-  lkd_under_db <- lkd_under_db %>%
-    arrange(LokalID, LokalerUnderID) %>%
-    group_by(LokalID) %>%
-    summarize(LokalUnder = str_c(LokalUnder, collapse = " | "))
+  lkd_under_db <- lkd_under_db |>
+    dplyr::arrange(LokalID, LokalerUnderID) |>
+    dplyr::group_by(LokalID) |>
+    dplyr::summarize(LokalUnder = stringr::str_c(LokalUnder, collapse = " | "))
 
   # Re-investigate here again, use named vectors or perhaps a map statement?
-	lkd <- lkd_db %>%
-	  arrange(LanID, Lokalkod) %>%
-	  left_join(region %>% select(RegionID, Region), by = "RegionID") %>%
-	  left_join(lan %>% select(LanID, Lan = LanBokstav), by = "LanID") %>%
-	  left_join(kommun %>% select(KommunID, Kommun), by = "KommunID") %>%
-	  left_join(landskap %>% select(LandskapID, Landskap = LandskapBokstav), by = "LandskapID") %>%
-	  left_join(distrikt %>% select(DistriktID, Distrikt), by = "DistriktID") %>%
-	  left_join(rapportomr %>% select(RapportomradeID, Rapportomrade), by = "RapportomradeID") %>%
-	  left_join(delomrade %>% select(DelomradeID, Delomrade), by = "DelomradeID") %>%
-	  relocate(Region:Delomrade, .after = LokalID) %>%
-	  select(
+	lkd <- lkd_db |>
+	  dplyr::arrange(LanID, Lokalkod) |>
+	  dplyr::left_join(region |> dplyr::select(RegionID, Region), dplyr::join_by(RegionID)) |>
+	  dplyr::left_join(lan |> dplyr::select(LanID, Lan = LanBokstav), dplyr::join_by(LanID)) |>
+	  dplyr::left_join(kommun |> dplyr::select(KommunID, Kommun), dplyr::join_by(KommunID)) |>
+	  dplyr::left_join(landskap |> dplyr::select(LandskapID, Landskap = LandskapBokstav), dplyr::join_by(LandskapID)) |>
+	  dplyr::left_join(distrikt |> dplyr::select(DistriktID, Distrikt), dplyr::join_by(DistriktID)) |>
+	  dplyr::left_join(rapportomr |> dplyr::select(RapportomradeID, Rapportomrade), dplyr::join_by(RapportomradeID)) |>
+	  dplyr::left_join(delomrade |> dplyr::select(DelomradeID, Delomrade), dplyr::join_by(DelomradeID)) |>
+	  dplyr::relocate(Region:Delomrade, .after = LokalID) |>
+	  dplyr::select(
 	    -c(LanID:DelomradeID),
 	    -Alias, -KommentarHemlig, -OrtnamnOsakert)
 
-	lkd <- lkd %>%
-	  left_join(lkd_under_db, by = "LokalID") %>%
-	  relocate(LokalUnder, .after = Lokalnamn)
+	lkd <- lkd |>
+	  dplyr::left_join(lkd_under_db, dplyr::join_by(LokalID)) |>
+	  dplyr::relocate(LokalUnder, .after = Lokalnamn)
 
 	# Summera årsposter och koppla till lkd
 	# This step is really slow in R 4.3.0 - investigate why!
 	# Confirmed that code is much faster in R 4.1.3. It is the case_when
 	# statements that causes trouble.
-	lkd_sum <- lkd_db_overv %>%
-	  #filter(CensusYear >= year(now()) - 6) %>%
-	  arrange(LokalID, CensusYear) %>%
-	  group_by(LokalID) %>%
-	  summarize(
-	    n_year_posts = n(),
+	lkd_sum <- lkd_db_overv |>
+	  # dplyr::filter(CensusYear >= year(now()) - 6) |>
+	  dplyr::arrange(LokalID, CensusYear) |>
+	  dplyr::group_by(LokalID) |>
+	  dplyr::summarize(
+	    n_year_posts = dplyr::n(),
 	    missing_status = sum(is.na(OvervakningUtfallID), na.rm = TRUE),
 	    n_surveyed = sum(OvervakningUtfallID > 0, na.rm = TRUE),
 	    n_occupied = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 44, na.rm = TRUE),
 	    n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
 	    n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
 	    n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
-	    first_survey = first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_survey = last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_occupied = last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_occupied_nest = last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_productive = last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE))
+	    first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+	    last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+	    last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+	    last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+	    last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE))
 
-	lkd <- lkd %>%
-	  left_join(lkd_sum, by = "LokalID")
+	lkd <- lkd |>
+	  dplyr::left_join(lkd_sum, dplyr::join_by(LokalID))
 
 	if (spatial | add_coordinates) {
 
@@ -117,44 +117,44 @@ wtse_lkd <- function(
 		    ORDER BY ortnamn.lopnr;"
 
 	  if (db_package == "DBI") {
-	    db_f_coords <- DBI::dbGetQuery
+	    db_f_coords <- function(...) DBI::dbGetQuery(...)
 	  } else if (db_package == "RODBC") {
-	    db_f_coords <- RODBC::sqlQuery
+	    db_f_coords <- function(...) RODBC::sqlQuery(...)
 	  }
 
-	  lkd_koord <- db_f_coords(db_data_conn, lkd_koord_sql) %>%
-	    as_tibble()
+	  lkd_koord <- db_f_coords(db_data_conn, lkd_koord_sql) |>
+	    tibble::as_tibble()
 	}
 
 	if (spatial) {
 
-	  lkd_sf <- lkd %>%
-	    inner_join(lkd_koord, by = c("Ortnamn_LOPNR" = "Lopnr")) %>%
+	  lkd_sf <- lkd |>
+	    dplyr::inner_join(lkd_koord, dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
 	    sf::st_as_sf(coords = c("Easting", "Northing"), crs = 3006)
 
-	  if (!is.null(crs)) lkd_sf <- lkd_sf %>% st_transform(crs = crs)
-	  if (add_coordinates) lkd_sf <- lkd_sf %>% sfc_as_cols(names = names)
+	  if (!is.null(crs)) lkd_sf <- lkd_sf |> sf::st_transform(crs = crs)
+	  if (add_coordinates) lkd_sf <- lkd_sf |> sfc_as_cols(names = names)
 
 	  return(lkd_sf)
 	} else if (!spatial) {
 	  if (add_coordinates) {
 	    if(!is.null(crs)) {
 
-	      lkd_koord <- lkd_koord %>%
-	        sf::st_as_sf(coords = c("Easting", "Northing"), crs = 3006) %>%
-	        st_transform(crs) %>%
-	        sfc_as_cols(names = names) %>%
-	        st_drop_geometry() %>%
-	        as_tibble()
+	      lkd_koord <- lkd_koord |>
+	        sf::st_as_sf(coords = c("Easting", "Northing"), crs = 3006) |>
+	        sf::st_transform(crs) |>
+	        sfc_as_cols(names = names) |>
+	        sf::st_drop_geometry() |>
+	        tibble::as_tibble()
 
-	      lkd <- lkd %>%
-	        left_join(lkd_koord, by = c("Ortnamn_LOPNR" = "Lopnr"))
+	      lkd <- lkd |>
+	        dplyr::left_join(lkd_koord, dplyr::join_by (Ortnamn_LOPNR == Lopnr))
 
 	    } else {
 
-	      lkd <- lkd %>%
-	        left_join(lkd_koord, by = c("Ortnamn_LOPNR" = "Lopnr")) %>%
-	        rename_with(~ names, c(Easting, Northing))
+	      lkd <- lkd |>
+	        dplyr::left_join(lkd_koord, dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
+	        dplyr::rename_with(~ names, c(Easting, Northing))
 	    }
 	  }
 	  return(lkd)
@@ -176,21 +176,24 @@ wtse_lkd <- function(
 # Differences RODBC / DBI -package
 # RODBC does not read logical fields properly, must convert 0/1 to TRUE/FALSE
 # Date/time: tzone attributes are inconsistent. DBI uses UTC (but is this correct?)
-
-# system.time(lkd_dbi <- wtse_lkd(spatial = FALSE, db_package = "DBI"))
-# system.time(lkd_rodbc <- wtse_lkd(spatial = FALSE, db_package = "RODBC"))
+# lkd_dbi <- wtse_lkd(spatial = FALSE, db_package = "DBI", encoding = "")
+# lkd_rodbc <- wtse_lkd(spatial = FALSE, db_package = "RODBC")
 #
-# lkd_rodbc <- lkd_rodbc %>%
-#   mutate(BoplatsOkand = as.logical(BoplatsOkand == 1))
+# lkd_rodbc <- lkd_rodbc |>
+#   dplyr::mutate(BoplatsOkand = as.logical(BoplatsOkand == 1))
 #
 # all.equal(lkd_dbi, lkd_rodbc)
 #
-# lkd_dbi %>% count(Region)
-# lkd_rodbc %>% count(Region)
+# chk_inds <- which(lkd_dbi$KommentarPublik != lkd_rodbc$KommentarPublik)
+# lkd_dbi$KommentarPublik[chk_inds]
+# lkd_rodbc$KommentarPublik[chk_inds]
 #
-# lkd_dbi %>% select(BoplatsOkand, date_created, date_modified)
-# lkd_rodbc %>% select(BoplatsOkand, date_created, date_modified)
-
+# lkd_dbi |> dplyr::count(Region)
+# lkd_rodbc |> dplyr::count(Region)
+#
+# lkd_dbi |> dplyr::select(BoplatsOkand, date_created, date_modified)
+# lkd_rodbc |> dplyr::select(BoplatsOkand, date_created, date_modified)
+#
 # wtse_lkd(spatial = FALSE, add_coordinates = TRUE)
 # wtse_lkd(spatial = TRUE, add_coordinates = TRUE)
 # wtse_lkd(spatial = FALSE, crs = 3847, add_coordinates = TRUE, names = c("Easting", "Northing"))
@@ -199,47 +202,47 @@ wtse_lkd <- function(
 
 # Format site codes to common format
 #' @export
-wtse_lkd_str <- function(.x) {
-	# remove all spaces
-	stringr::str_replace_all(.x, "[[:blank:]]", "") %>%
+wtse_lkd_str <- function(.x, pattern = "([0-9]{1,3})") {
+	.x |>
+  # remove all spaces
+	stringr::str_replace_all("[[:blank:]]", "") |>
 	# Extract and pad numeric part
-	stringr::str_replace(., "([0-9]{1,3})",
-		stringr::str_extract(., "([0-9]{1,3})") %>%
-			stringr::str_pad(., width = 3, pad = "0")) %>%
+  stringr::str_replace_all(
+    pattern,
+    \(x) stringr::str_pad(x, width = 3, pad = "0")) |>
 	# remove any trailing inland "i"
-	stringr::str_replace(., "([i]{1}$)", "") %>%
+	stringr::str_replace("([i]{1}$)", "") |>
 	# convert all characters to upper
-	stringr::str_to_upper() %>%
+	stringr::str_to_upper() |>
 	# trim whitespace
-	stringr::str_trim(.)
+	stringr::str_trim()
 }
 
 #' @export
 wtse_lkd_str_old <- function(.x) {
-  .x %>%
-    stringr::str_replace_all(., "[[:blank:]]", "") %>%
-    stringr::str_sub(., 2) %>%
-    str_remove_all(., "^0+(?!$|([A-Za-z]{1}))") %>%
-    str_replace_all(., "\\/0+", "/") %>%
-    str_c(stringr::str_sub(.x, 1, 1), .)
+  .x |>
+    stringr::str_replace_all("[[:blank:]]", "") |>
+    stringr::str_sub(2) |>
+    stringr::str_remove_all("^0+(?!$|([A-Za-z]{1}))") |>
+    stringr::str_replace_all("\\/0+", "/") |>
+    stringr::str_c(
+      stringr::str_sub(.x, 1, 1), ...=_)
 }
 
-# Examples ----
-# library(tidyverse)
-# x <- tibble(lokalkod = c("E2/4", " H7b   ", "C98i", "C98 i", "C9 8 i", "C3B2", "X4", "X004", "x4b", "X4b", "C3/15"))
-# x %>%
-#   mutate(lokalkod_test = wtse_lkd_str(lokalkod) %>% wtse_lkd_str(.))
-# # OBS! Denna funktion gör inga förändringar för koder som C315 och C917!
+# x <- tibble::tibble(lokalkod = c("E2/4", " H7b   ", "C98i", "C98 i", "C9 8 i", "C3B2", "X4", "X004", "x4b", "X4b", "C3/15"))
+# x |>
+#   dplyr::mutate(lokalkod_test = wtse_lkd_str(lokalkod) |> wtse_lkd_str(.))
+# OBS! Denna funktion gör inga förändringar för koder som C315 och C917!
 #
-# y <- c("B1", "B11", "B11B", "B111", "E2/4", "C3/15", "C3B2", "B1 ")
-# wtse_lkd_str(y)
+# .x <- c("B1", "B11", "B11B", "B111", "E2/4", "C3/15", "C3B2", "B1 ", "B102i")
+# wtse_lkd_str(.x)
 #
-# # Change "the other way", i.e. remove zeros
-# z <- c("B020", "B020B", "B001", "B011", "B011B", "B111", "E002/004", "C003/015", "C003B2", "B001 ", "B100", "B101", "B102i")
-# wtse_lkd_str_old(z)
+# Change "the other way", i.e. remove zeros
+# .x <- c("B020", "B020B", "B001", "B011", "B011B", "B111", "E002/004", "C003/015", "C003B2", "B001 ", "B100", "B101", "B102i")
+# wtse_lkd_str_old(.x)
 #
-# # Extract numeric part
-# #z %>% str_extract_all(., "[[:digit:]]+")
+# Extract numeric part
+# .x |> stringr::str_extract_all("[[:digit:]]+")
 #
-# # Extract characters:
-# # 0*(\\d+)
+# Extract characters:
+# 0*(\\d+)

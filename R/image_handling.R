@@ -56,12 +56,12 @@ exiftool_read <- function(
     stdout = output_file)
 
   # Import data in JSON-format
-  exif_data_parse <- jsonlite::fromJSON(output_file) %>%
-    as_tibble() %>%
-    relocate(FileName)
+  exif_data_parse <- jsonlite::fromJSON(output_file) |>
+    tibble::as_tibble() |>
+    dplyr::relocate(FileName)
 
   if (clean_names) {
-    exif_data_parse <- exif_data_parse %>%
+    exif_data_parse <- exif_data_parse |>
       janitor::clean_names()
   }
 

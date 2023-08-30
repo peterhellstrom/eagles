@@ -1,20 +1,26 @@
 #' @export
-move_new_jpg <- function(jpg_dir, db_dir_base, k_id, v_id, seq_start,
-                         overwrite = FALSE, execute = TRUE, sep = ".",
-						 pattern = ".jpg") {
+move_new_jpg <- function(
+    jpg_dir, db_dir_base, k_id, v_id, seq_start,
+    overwrite = FALSE, execute = TRUE, sep = ".",
+    pattern = ".jpg") {
 
-	setwd(jpg_dir)
+	# Change - do net set working directory like this!
+  setwd(jpg_dir)
+
 	x <- list.files(pattern = pattern)
+
 	x_new <- paste0(
-	  "k", str_pad(k_id, width = 2, pad = 0),
-	  sep, "v", str_pad(v_id, width = 4, pad = 0),
-	  sep, "b", str_pad(seq(seq_start, seq_start + length(x) - 1), width = 4, pad = 0), ".jpg")
+	  "k", stringr::str_pad(k_id, width = 2, pad = 0),
+	  sep, "v", stringr::str_pad(v_id, width = 4, pad = 0),
+	  sep, "b", stringr::str_pad(
+	    seq(seq_start, seq_start + length(x) - 1),
+	    width = 4, pad = 0), ".jpg")
 
 	if (execute) file.rename(x, x_new)
 
 	db_dir <- paste0(
-	  "k", str_pad(k_id, width = 2, pad = 0),
-	  "/v", str_pad(v_id, width = 4, pad = 0))
+	  "k", stringr::str_pad(k_id, width = 2, pad = 0),
+	  "/v", stringr::str_pad(v_id, width = 4, pad = 0))
 
 	db_dir_path <- file.path(db_dir_base, db_dir)
 
@@ -35,19 +41,22 @@ move_new_jpg <- function(jpg_dir, db_dir_base, k_id, v_id, seq_start,
 
 # Helper functions
 #' @export
+# get_dir_path <- function(k_id, v_id) {
+# 	db_dir <- paste0(
+# 	  "k", stringr::str_pad(k_id, width = 2, pad = 0),
+# 	  "/v", stringr::str_pad(v_id, width = 4, pad = 0))
+# 	db_dir
+# }
 get_dir_path <- function(k_id, v_id) {
-	db_dir <- paste0(
-	  "k", str_pad(k_id, width = 2, pad = 0),
-	  "/v", str_pad(v_id, width = 4, pad = 0))
-	db_dir
+  glue::glue("k{stringr::str_pad(k_id, width = 2, pad = 0)}/v{stringr::str_pad(v_id, width = 4, pad = 0)}")
 }
 
 #' @export
 set_file_name <- function(k_id, v_id, b_id, sep = ".", pattern = ".jpg") {
 	paste0(
-		"k", str_pad(k_id, width = 2, pad = 0),
-		sep, "v", str_pad(v_id, width = 4, pad = 0),
-		sep, "b", str_pad(b_id, width = 4, pad = 0), pattern)
+		"k", stringr::str_pad(k_id, width = 2, pad = 0),
+		sep, "v", stringr::str_pad(v_id, width = 4, pad = 0),
+		sep, "b", stringr::str_pad(b_id, width = 4, pad = 0), pattern)
 }
 
 #' @export
@@ -62,47 +71,54 @@ get_seq_start <- function(db_dir_base, db_dir_path, pattern = "*.jpg", start = 1
 }
 
 #' @export
-insert_arkiv <- function(k_id, v_id,
-                         seq_start = 1,
-                         observator_text,
-                         typ_data, typ_handling,
-                         tidsperiod,
-                         dsn = "Havsorn_Data",
-                         db_dir_base,
-                         pattern = ".jpg",
-                         execute = FALSE) {
+insert_arkiv <- function(
+    k_id, v_id,
+    seq_start = 1,
+    observator_text,
+    typ_data, typ_handling,
+    tidsperiod,
+    dsn = "Havsorn_Data",
+    db_dir_base,
+    pattern = ".jpg",
+    execute = FALSE) {
 
   # List existing files
-  x <- list.files(file.path(db_dir_base, get_dir_path(k_id, v_id)), pattern = pattern)
+  x <- list.files(
+    file.path(db_dir_base, get_dir_path(k_id, v_id)),
+    pattern = pattern)
 
-  x <- x %>%
-    as_tibble() %>%
-    rename(Filnamn = value)
+  x <- x |>
+    tibble::as_tibble() |>
+    dplyr::rename(Filnamn = value)
 
   # Construct data
-  sql_insert_data <- x %>%
-    mutate(VolymID = v_id,
-           Lopnr = seq(seq_start, length.out = nrow(.), by = 1),
-           KontaktText = observator_text,
-           TypDataID = typ_data,
-           TypHandlingID = typ_handling,
-           TidsPeriod = tidsperiod) %>%
-    select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
+  sql_insert_data <- x |>
+    dplyr::mutate(
+      VolymID = v_id,
+      # Need to remove dot notation here,
+      # will not work with native pipe
+      Lopnr = seq(seq_start, length.out = nrow(.), by = 1),
+      KontaktText = observator_text,
+      TypDataID = typ_data,
+      TypHandlingID = typ_handling,
+      TidsPeriod = tidsperiod) |>
+    dplyr::select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
 
-    sql_insert_list <- sql_insert_data %>%
-      as.list()
+  sql_insert_list <- sql_insert_data |>
+    as.list()
 
   # Check if data already exists - only add non-existing file names!
   con_rodbc <- RODBC::odbcConnect(dsn = dsn)
-  fls_exist <- RODBC::sqlQuery(con_rodbc,
-                               paste0("SELECT * FROM tArkivDok WHERE Filnamn IN (",
-                                      str_c(paste0("'",pull(sql_insert_data, Filnamn), "'"),
-                                            collapse = ", "), ")"))
+  fls_exist <- RODBC::sqlQuery(
+    con_rodbc,
+    paste0("SELECT * FROM tArkivDok WHERE Filnamn IN (",
+           stringr::str_c(paste0("'", dplyr::pull(sql_insert_data, Filnamn), "'"),
+                 collapse = ", "), ")"))
 
-  sql_insert_data <- sql_insert_data %>%
-    as_tibble() %>%
-    anti_join(fls_exist, by = "Filnamn") %>%
-    #mutate(Lopnr = seq_start:(seq_start + (nrow(.) - 1))) %>%
+  sql_insert_data <- sql_insert_data |>
+    tibble::as_tibble() |>
+    dplyr::anti_join(fls_exist, by = "Filnamn") |>
+    # dplyr::mutate(Lopnr = seq_start:(seq_start + (nrow(.) - 1))) |>
     as.list()
 
   if (execute) {
@@ -113,17 +129,17 @@ insert_arkiv <- function(k_id, v_id,
     RODBCext::sqlExecute(con_rodbc, sql_insert_str, data = sql_insert_data)
 
     # Check if data were inserted to db
-    #sql_str_chk <- paste0("SELECT * FROM tArkivDok WHERE VolymID = ", v_id)
-    #tmp <- RODBCext::sqlExecute(con_rodbc, sql_str_chk, fetch = TRUE, as.is = TRUE) %>%
-    #  as_tibble() %>%
-    #  select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
+    # sql_str_chk <- paste0("SELECT * FROM tArkivDok WHERE VolymID = ", v_id)
+    # tmp <- RODBCext::sqlExecute(con_rodbc, sql_str_chk, fetch = TRUE, as.is = TRUE) |>
+    #  tibble::as_tibble() |>
+    #  dplyr::select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
 
 
     # with DBI-package, does not work with Access databases
-    #sql_insert <- DBI::dbSendQuery(con, sql_str)
-    #dbBind(sql_insert, sql_insert_data)
-    #dbClearResult(sql_insert)
-    #dbDisconnect(con)
+    # sql_insert <- DBI::dbSendQuery(con, sql_str)
+    # dbBind(sql_insert, sql_insert_data)
+    # dbClearResult(sql_insert)
+    # dbDisconnect(con)
   } else {
       return(sql_insert_data)
   }
@@ -144,10 +160,11 @@ insert_arkiv <- function(k_id, v_id,
 # which can be moved. Put the exe-file in the picture maps!
 
 #' @export
-thumbs_bat <- function(files, output_file, output_dir = getwd(),
-                       sub_dir = TRUE,
-                       relative = FALSE,
-                       i_view_path = "C:/Program Files/IrfanView/i_view64.exe") {
+thumbs_bat <- function(
+    files, output_file, output_dir = getwd(),
+    sub_dir = TRUE,
+    relative = FALSE,
+    i_view_path = "C:/Program Files/IrfanView/i_view64.exe") {
 
   # Write file list
   if (!dir.exists(output_dir)) dir.create(output_dir)
@@ -161,13 +178,14 @@ thumbs_bat <- function(files, output_file, output_dir = getwd(),
   }
 
   # Write contents of filelist
-  write.table(files,
-              filelist_file,
-              row.names = FALSE,
-              col.names = FALSE)
+  write.table(
+    files,
+    filelist_file,
+    row.names = FALSE,
+    col.names = FALSE)
 
   if (relative) {
-    filelist_file <- str_replace(filelist_file, paste0(output_dir, "/"), "")
+    filelist_file <- stringr::str_replace(filelist_file, paste0(output_dir, "/"), "")
     i_view_path <- basename(i_view_path)
   }
 

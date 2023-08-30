@@ -1,36 +1,36 @@
-# kungsorn_cols_sv <- function(.x, .y, .value) .y[match(.value, .x)] # general version
-# kungsorn_cols_sv(.value = "Territorium", .y = kolumner$field_name_sv, .x = kolumner$field_name_no)
+# kungsorn_cols_swe <- function(.x, .y, .value) .y[match(.value, .x)] # general version
+# kungsorn_cols_swe(.value = "Territorium", .y = kolumner$field_name_sv, .x = kolumner$field_name_no)
 # hard-coded version
 # Men vad händer om det potentiellt finns flera träffar???? Bör testas...
 #' @export
-kungsorn_cols_sv <- function(.x) {
-  kolumner$field_name_sv[match(.x, kolumner$field_name_no)]
+kungsorn_cols_swe <- function(.x) {
+  rovbase_reports_columns$field_name_sv[match(.x, rovbase_reports_columns$field_name_no)]
 }
 
 #' @export
 kungsorn_load_report <- function(.x) {
-    read_excel(.x) %>%
-    rename_with(~ kungsorn_cols_sv(.))
+    readxl::read_excel(.x) |>
+    dplyr::rename_with(kungsorn_cols_swe)
 }
 
-#x <- map(fls_import, read_excel)
+# x <- map(fls_import, read_excel)
 # Läs in till lista
-#x <- map(fls_import, kungsorn_load_report)
-#names(x) <- str_replace(basename(fls_import), ".xlsx", "")
+# x <- map(fls_import, kungsorn_load_report)
+# names(x) <- str_replace(basename(fls_import), ".xlsx", "")
 
 # Skapa "enskilda objekt" från listan x
 # observera att listan x finns kvar, förbrukar alltså dubbelt med minne
 # går det att köra assign direkt?
-#for (i in seq_along(x)) assign(names(x)[[i]], x[[i]])
+# for (i in seq_along(x)) assign(names(x)[[i]], x[[i]])
 
 #' @export
 kungsorn_load_report2 <- function(.x, .file_extension = ".xlsx$") {
-  .data <- .x %>%
-    read_excel() %>%
-    rename_with(~ kungsorn_cols_sv(.))
+  .data <- .x |>
+    readxl::read_excel() |>
+    dplyr::rename_with(kungsorn_cols_swe)
 
-  .new_name <- str_replace(basename(.x), .file_extension, "")
-  assign(.new_name, .data, envir = parent.frame())
+  .new_name <- stringr::str_replace(basename(.x), .file_extension, "")
+  base::assign(.new_name, .data, envir = parent.frame())
 }
 
 # for (i in seq_along(fls_import)) kungsorn_load_report2(fls_import[[i]])
@@ -41,14 +41,17 @@ kungsorn_load_report2 <- function(.x, .file_extension = ".xlsx$") {
 # dock är det enkelt att ändra funktionen om önskvärt.
 
 #' @export
-kungsorn_bind_reports <- function(.x, .value,
-                                  .sub_dir = "data_rovbase/rapporter_nedladdade") {
-  .x %>%
-    filter(str_detect(report_short_name, .value)) %>%
-    mutate(file_path = file.path(".", .sub_dir, file_name)) %>%
-    pull(file_path) %>%
-    map(., kungsorn_load_report) %>%
-    bind_rows()
+kungsorn_bind_reports <- function(
+    .x,
+    .value,
+    .sub_dir = "data_rovbase") {
+
+  .x |>
+    dplyr::filter(stringr::str_detect(report_short_name, .value)) |>
+    dplyr::mutate(file_path = file.path(.sub_dir, file)) |>
+    dplyr::pull(file_path) |>
+    purrr::map(kungsorn_load_report) |>
+    dplyr::bind_rows()
 }
 
 # Alternativ metod
@@ -57,14 +60,21 @@ kungsorn_bind_reports <- function(.x, .value,
 
 # Sammanställningar ----
 ## Komplettera län ----
+# Requires input data in environment, lan_s_n
 #' @export
 complete_lan <- function(.x, ...) {
-  .x %>%
-    relocate(lanbok) %>%
-    mutate(lanbok = factor(lanbok, levels = lan_s_n %>% pull(lanbok))) %>%
-    complete(lanbok, ...) %>%
-    right_join(lan_s_n %>% select(-c(X, Y, lannamn)), by = "lanbok") %>%
-    relocate(land, forvaltningsomrade, lankod, lanbok)
+  .x |>
+    dplyr::relocate(lanbok) |>
+    dplyr::mutate(
+      lanbok = base::factor(lanbok, levels = lan_s_n |> dplyr::pull(lanbok))
+    ) |>
+    tidyr::complete(lanbok, ...) |>
+    dplyr::right_join(
+      lan_s_n |>
+        dplyr::select(-c(X, Y, lannamn)),
+      dplyr::join_by(lanbok)
+    ) |>
+    dplyr::relocate(land, forvaltningsomrade, lankod, lanbok)
 }
 
 ## Revir ----
@@ -75,13 +85,13 @@ sum_revir <- function(.x = boplats_join, .y = revir_join, survey_year = NULL) {
   # .y = revir
   if (is.null(survey_year)) survey_year <- max({{.x}}$`År, ny boplats`, na.rm = TRUE)
 
-  b <- {{.x}} %>%
+  b <- {{.x}} |>
     # Koppla startår för reviret till boplats-data
-    left_join({{.y}} %>%
-                select(LokalID, Startår_revir = Startår),
-              by = "LokalID") %>%
+    dplyr::left_join({{.y}} |>
+                dplyr::select(LokalID, Startår_revir = Startår),
+              dplyr::join_by(LokalID)) |>
     # Inkludera enbart revir som helt säkert inte var kända vid angivet år
-    filter(Startår_revir <= survey_year | is.na(Startår_revir))
+    dplyr::filter(Startår_revir <= survey_year | is.na(Startår_revir))
 
   # Hantera boplatser som registrerats efter angivet år, men ingen info finns om
   # startår. `År registrerat` är inte säkert, kan ju handla om ett revir/bo som
@@ -91,26 +101,25 @@ sum_revir <- function(.x = boplats_join, .y = revir_join, survey_year = NULL) {
   # vid angivet inventeringsår, även om det inte fanns ngn angiven boplats
   # detta år! Startår MÅSTE fyllas i på revirnivå för att reda ut detta problem!
   # Ta bort eller låt dessa vara kvar?
-  b <- b %>%
-    filter(is.na(`År, ny boplats`) | `År, ny boplats` <= survey_year)
+  b <- b |>
+    dplyr::filter(is.na(`År, ny boplats`) | `År, ny boplats` <= survey_year)
 
   #
-  b <- b %>%
-    bind_rows(
-      revir_join %>%
-        anti_join(boplats_join, by = "LokalID") %>%
-        filter(is.na(Startår) | Startår <= survey_year) %>%
-        select(LokalID))
+  b <- b |>
+    dplyr::bind_rows(
+      revir_join |>
+        dplyr::anti_join(boplats_join, dplyr::join_by(LokalID)) |>
+        dplyr::filter(is.na(Startår) | Startår <= survey_year) |>
+        dplyr::select(LokalID))
   b
 }
 
-# #sum_revir() %>%
-# z <- sum_revir(survey_year = 2021) %>%
+# z <- sum_revir(survey_year = 2023) |>
 #   add_wt(LokalID, lankod, lanbok)
 #
-# z %>%
-#   count(lankod, lanbok, wt = wt) %>%
-#   adorn_totals()
+# z |>
+#   dplyr::count(lankod, lanbok, wt = wt) |>
+#   janitor::adorn_totals()
 
 # Hantera revir utan geografisk info
 
@@ -119,9 +128,9 @@ sum_revir <- function(.x = boplats_join, .y = revir_join, survey_year = NULL) {
 ### Boplatser per revir ----
 # Okända bon: Leta efter termen 'okän' i Boplats- och Kommentarsfälten
 # Notera att man också kan använda funktionen regex för att leta "case-insensitive"
-# boplats %>%
-#  filter_at(vars(Boplats, Kommentar),
-#            any_vars(str_detect(., regex("okän*", ignore_case = TRUE))))
+# boplats |>
+#  dplyr::filter_at(vars(Boplats, Kommentar),
+#            dplyr::any_vars(stringr::str_detect(., regex("okän*", ignore_case = TRUE))))
 
 # OBS! Kolla även i kommentarsfältet efter okända bon, det finns några där som
 # inte är angivna i fältet "Boplats"!
@@ -137,9 +146,11 @@ boplatser_per_revir <- function(.x = boplats, ..., survey_year = NULL) {
 
   boplats %>%
     summarize(
-      n_bon = sum(is.na(`År, ny boplats`) | `År, ny boplats` <= survey_year),
-      n_okända_bon = sum(str_detect(Boplats, "okän|Okän") & `År, ny boplats` <= survey_year |
-                           str_detect(Boplats, "okän|Okän") & is.na(`År, ny boplats`), na.rm = TRUE),
+      n_bon = sum(
+        is.na(`År, ny boplats`) | `År, ny boplats` <= survey_year),
+      n_okända_bon = sum(
+        str_detect(Boplats, "okän|Okän") & `År, ny boplats` <= survey_year |
+          str_detect(Boplats, "okän|Okän") & is.na(`År, ny boplats`), na.rm = TRUE),
       n_kända_bon = n_bon - n_okända_bon,
       n_borta = sum(`Boplats borta` & `År, ny boplats` <= survey_year |
                       `Boplats borta` & is.na(`År, ny boplats`), na.rm = TRUE),
@@ -147,14 +158,15 @@ boplatser_per_revir <- function(.x = boplats, ..., survey_year = NULL) {
       min_år_ny = my_min_max(`År, ny boplats`, min),
       max_år_ny = my_min_max(`År, ny boplats`, max)) %>%
     relocate(n_kända_bon, .after = n_bon) %>%
-    mutate(
+    dplyr::mutate(
       bostatus = case_when(
         n_okända_bon == 0 & n_befintliga_bon > 0 & n_kända_bon > 0 ~ "Känt bo",
         n_okända_bon == 0 & n_befintliga_bon == 0 & n_kända_bon > 0 ~ "(Tidigare) känt bo",
         n_okända_bon > 0 & n_befintliga_bon > 0 & n_kända_bon > 0 ~ "Känt och okänt bo",
         n_okända_bon > 0 & n_befintliga_bon == 0 & n_kända_bon > 0 ~ "(I dagsläget) okänt bo",
         n_okända_bon > 0 & n_befintliga_bon == 0 & n_kända_bon == 0 ~ "Okänt bo",
-        n_okända_bon == 0 & n_befintliga_bon == 0 & n_kända_bon == 0 ~ paste0("Upptäckt efter ", survey_year)))
+        n_okända_bon == 0 & n_befintliga_bon == 0 & n_kända_bon == 0 ~ paste0("Upptäckt efter ", survey_year))
+    )
 }
 
 # Exempel

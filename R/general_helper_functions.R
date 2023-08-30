@@ -134,9 +134,9 @@ extend <- function(alphabet) function(i) {
 
 #' @export
 pdf_page_count <- function(.files, .columns = c("pages", "created")) {
-  map_dfr(
+  purrr::map_dfr(
     .files,
-    ~ pdftools::pdf_info(.x)[.columns],
+    \(x) pdftools::pdf_info(x)[.columns],
     .id = "input_file")
 }
 
@@ -145,11 +145,11 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 #' @export
 convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
   .x |>
-    dplyr::mutate(across({{cols}}, \(x) case_when(
+    dplyr::mutate(dplyr::across({{cols}}, \(x) dplyr::case_when(
       x %in% yes_value ~ TRUE,
       x %in% no_value ~ FALSE,
       TRUE ~ NA))) |>
-    dplyr::mutate(across({{cols}}, as.logical))
+    dplyr::mutate(dplyr::across({{cols}}, as.logical))
 }
 
 # Ersätt specificerat värde med kolumnnamnet för variabeln

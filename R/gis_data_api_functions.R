@@ -1,30 +1,36 @@
 #' @export
 get_nvrid_wkt <- function(
-    nvrid, beslutsstatus = "Gällande",
+    nvrid,
+    beslutsstatus = "Gällande",
     crs = 3006,
     crs_to = NULL,
-    map = FALSE, fill = TRUE) {
+    map = FALSE,
+    fill = TRUE) {
 
-  wkt_str <- glue("https://geodata.naturvardsverket.se/naturvardsregistret/rest/v3/omrade/{nvrid}/{beslutsstatus}/wkt")
-  wkt_resp <- sapply(wkt_str, readLines, warn = FALSE)
+  wkt_str <- glue::glue("https://geodata.naturvardsverket.se/naturvardsregistret/rest/v3/omrade/{nvrid}/{beslutsstatus}/wkt")
+  # wkt_resp <- sapply(wkt_str, readLines, warn = FALSE)
+  wkt_resp <- purrr::map_chr(wkt_str, \(x) readLines(x, warn = FALSE))
 
-  xy <- st_as_sfc(wkt_resp, crs = crs) %>%
-    st_as_sf() %>%
-    mutate(
+  xy <- sf::st_as_sfc(wkt_resp, crs = crs) |>
+    sf::st_as_sf() |>
+    dplyr::mutate(
       nvrid = nvrid,
       beslutsstatus = beslutsstatus)
 
-  st_geometry(xy) <- "geom"
+  sf::st_geometry(xy) <- "geom"
 
-  if (!is.null(crs_to)) xy <- xy %>% st_transform(crs_to)
+  if (!is.null(crs_to)) {
+    xy <- xy |> sf::st_transform(crs_to)
+  }
 
   if (map) {
     # Leaflet
-    m <- leaflet(data = xy %>% st_transform(4326)) %>%
-      addTiles() %>%
-      addPolygons(fill = fill)
+    m <- leaflet::leaflet(
+      data = xy |> sf::st_transform(4326)) |>
+      leaflet::addTiles() |>
+      leaflet::addPolygons(fill = fill)
     # Mapview
-    #m <- mapview(xy)
+    #m <- mapview::mapview(xy)
     m
   } else {
     xy
@@ -41,14 +47,12 @@ nv_rest_api <- function(
   p <- with(list(...), glue::glue(str_parameters))
   rest_url <- glue::glue("{base_url}/{p}")
 
-  #x_raw <- lapply(rest_url, jsonlite::fromJSON)
-  #x <- x_raw %>% tibble::as_tibble()
-  x <- map_dfr(rest_url, ~ jsonlite::fromJSON(txt = .x)) %>%
+  x <- purrr::map_dfr(rest_url, \(x) jsonlite::fromJSON(txt = x)) |>
     tibble::as_tibble()
 
   if (remove_atom_link) {
-    x %>% select(-atom.link)
+    x |> dplyr::select(-atom.link)
   }
 
-  x %>% distinct()
+  x |> dplyr::distinct()
 }

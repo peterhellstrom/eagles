@@ -3,7 +3,7 @@
 # devtools::install_github("r-lib/devtools")
 # devtools::install_github("r-lib/usethis")
 
-# library(devtools) # added to .Rprofile startup file
+library(devtools) # added to .Rprofile startup file
 
 # p <- "W:/projects/R/eagles"
 # usethis::create_package(p, check_name = FALSE)

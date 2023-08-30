@@ -1,13 +1,25 @@
 # Höjddata ----
 #' @export
 extract_ruta_100 <- function(x) {
-  stringr::str_c(stringr::str_sub(x, 1, 2), stringr::str_sub(x, 5, 5), sep = "_")
+  stringr::str_c(
+    stringr::str_sub(x, 1, 2),
+    stringr::str_sub(x, 5, 5),
+    sep = "_")
 }
 
 #' @export
 extract_coords_from_ruta_5 <- function(x) {
-  ymin <- stringr::str_c(stringr::str_sub(x, 1, 3), stringr::str_sub(x, 8, 8), "000")
-  xmin <- stringr::str_c(stringr::str_sub(x, 5, 6) , stringr::str_sub(x, 9, 9), "000")
+
+  ymin <- stringr::str_c(
+    stringr::str_sub(x, 1, 3),
+    stringr::str_sub(x, 8, 8),
+    "000")
+
+  xmin <- stringr::str_c(
+    stringr::str_sub(x, 5, 6),
+    stringr::str_sub(x, 9, 9),
+    "000")
+
   data.frame(
     xmin = as.numeric(xmin),
     ymin = as.numeric(ymin))
@@ -29,7 +41,8 @@ lm_hojdmodell_url <- function(
       subset = glue::glue("y,epsg:{crs}({ymin},{ymax})"),
       subset = glue::glue("x,epsg:{crs}({xmin},{xmax})"),
       format = "image/tiff"
-    ))
+    )
+  )
 }
 
 # Note: use str_c() instead of file.path()
@@ -49,10 +62,16 @@ lm_hojdmodell_prepare <- function(
       ymax = ymin + dy) |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      file_dl = stringr::str_c(main_dir, ruta_100, stringr::str_c(ruta_5, ".tif"), sep = "/"),
+      file_dl = stringr::str_c(
+        main_dir,
+        ruta_100,
+        stringr::str_c(ruta_5, ".tif"),
+        sep = "/"),
       url_dl = lm_hojdmodell_url(
-        crs = crs, xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax))
-
+        crs = crs,
+        xmin = xmin, ymin = ymin,
+        xmax = xmax, ymax = ymax)
+    )
 }
 
 #' @export
@@ -85,12 +104,15 @@ lm_hojdmodell_download <- function(
   purrr::walk2(
     .x = .x$url_dl,
     .y = .x$file_dl,
-    ~ remotes:::download(
-      path = .y,
-      url = .x,
+    \(x,y) {
+      remotes:::download(
+      path = y,
+      url = x,
       basic_auth = list(
         user = user,
-        password = password)))
+        password = password))
+    }
+  )
 }
 
 # create virtual raster (vrt) from downloaded tif-files
@@ -103,8 +125,8 @@ lm_hojdmodell_vrt <- function(
   .data |>
     hojdmodell_prepare(main_dir = main_dir) |>
     dplyr::filter(file_exists(file_dl)) |>
-    dplyr::pull(file_dl) %>%
-    gdalbuildvrt(out_vrt) %>%
+    dplyr::pull(file_dl) |>
+    gdalbuildvrt(out_vrt) |>
     gdalinfo(mm = TRUE, stats = TRUE, hist = TRUE)
 }
 
@@ -118,16 +140,26 @@ lm_hojdmodell_vrt <- function(
 lm_get_token <- function(
     url = "https://api.lantmateriet.se/token",
     consumer_key = Sys.getenv("consumer_key"),
-    consumer_secret = Sys.getenv("consumer_secret")) {
-  POST(
+    consumer_secret = Sys.getenv("consumer_secret")
+) {
+
+  # basic_auth <- glue::glue("Basic {RCurl::base64(glue::glue('{consumer_key}:{consumer_secret}'))}") |>
+  #   rlang::set_names("Authorization")
+
+  consumer_key_secret <- paste(consumer_key, consumer_secret, sep = ":")
+  basic_auth <- c("Authorization" = paste("Basic", RCurl::base64(consumer_key_secret), sep = " "))
+
+  httr::POST(
     url = url,
-    config = add_headers(
-      .headers =
-        c('Authorization' =
-            paste("Basic", RCurl::base64(
-              paste(consumer_key, consumer_secret, sep = ":")),
-              sep = " "))),
+    config = httr::add_headers(
+      .headers = basic_auth),
     body = 'grant_type=client_credentials')
+}
+
+# httr::content(lm_get_token())$access_token
+
+add_headers_token <- function(token, sep = " ") {
+  c('Authorization' = paste("Bearer", token, sep = sep))
 }
 
 # Markhöjd Direkt ----
@@ -138,17 +170,19 @@ lm_markhojd_point <- function(
     altitude_only = FALSE,
     as = "text",
     url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd/3006",
-    token = content(lm_get_token())$access_token) {
+    token = httr::content(lm_get_token())$access_token) {
 
-  out <- GET(
+  out <- httr::GET(
     url = file.path(url, east, north),
-    config = add_headers(
-      .headers = c('Authorization' = paste("Bearer", token, sep = " "))))
+    config = httr::add_headers(
+      .headers = add_headers_token(token)
+    )
+  )
 
   if (!altitude_only) {
-    content(out, as = as)
+    httr::content(out, as = as)
   } else {
-    content(out)$geometry$coordinates[[3]]
+    httr::content(out)$geometry$coordinates[[3]]
   }
 }
 
@@ -158,19 +192,19 @@ lm_markhojd_geometry <- function(
     encode = "raw",
     as = "text",
     url = "https://api.lantmateriet.se/distribution/produkter/hojd/v1/rest/api/hojd",
-    token = content(lm_get_token())$access_token) {
+    token = httr::content(lm_get_token())$access_token) {
 
-  out <- POST(
+  out <- httr::POST(
     url = url,
-    config = add_headers(
+    config = httr::add_headers(
       .headers = c(
-        'Authorization' = paste("Bearer", token, sep = " "),
+        add_headers_token(token),
         'Accept' = 'application/json')),
-    content_type_json(),
+    httr::content_type_json(),
     body = geometry,
     encode = encode)
 
-  content(out, as = as)
+  httr::content(out, as = as)
 }
 
 # Ortnamn Direkt ----
@@ -180,32 +214,35 @@ lm_ortnamn_kriterier <- function(
     query,
     as = "text",
     url = "https://api.lantmateriet.se/distribution/produkter/ortnamn/v2.1",
-    token = content(lm_get_token())$access_token) {
+    token = httr::content(lm_get_token())$access_token) {
 
-  out <- GET(
-    url = modify_url(file.path(url, "kriterier"), query = query),
-    config = add_headers(
-      .headers = c('Authorization' = paste("Bearer", token, sep = " "))))
+  out <- httr::GET(
+    url = httr::modify_url(file.path(url, "kriterier"), query = query),
+    config = httr::add_headers(
+      .headers = add_headers_token(token)
+    )
+  )
 
-  content(out, as = as)
+  httr::content(out, as = as)
 }
 
 # two different id columns - why?
 #' @export
-lm_ortnamn_unnest_parsed <- function(x) {
-  tibble(x = x)[5,] %>%
-    unnest(x) %>%
-    unnest_wider(x)  %>%
-    unnest_wider(properties, names_sep = "_") %>%
-    unnest(properties_placering) %>%
-    unnest_wider(properties_placering) %>%
-    unnest_wider(punkt, names_sep = "_") %>%
-    unnest_wider(punkt_coordinates, names_sep = "_") %>%
-    select(-type, -bbox, -geometry, -punkt_type) %>%
-    rename(namn = properties_namn, sprak = properties_sprak) %>%
-    st_as_sf(coords = c("punkt_coordinates_1", "punkt_coordinates_2"),
-             crs = 3006) %>%
-    group_by(properties_id)
+lm_ortnamn_unnest_parsed <- function(x, crs = 3006) {
+  tibble::tibble(x = x)[5,] |>
+    tidyr::unnest(x) |>
+    tidyr::unnest_wider(x) |>
+    tidyr::unnest_wider(properties, names_sep = "_") |>
+    tidyr::unnest(properties_placering) |>
+    tidyr::unnest_wider(properties_placering) |>
+    tidyr::unnest_wider(punkt, names_sep = "_") |>
+    tidyr::unnest_wider(punkt_coordinates, names_sep = "_") |>
+    dplyr::select(-type, -bbox, -geometry, -punkt_type) |>
+    dplyr::rename(namn = properties_namn, sprak = properties_sprak) |>
+    sf::st_as_sf(
+      coords = c("punkt_coordinates_1", "punkt_coordinates_2"),
+      crs = crs) |>
+    dplyr::group_by(properties_id)
 }
 
 # type
@@ -240,12 +277,12 @@ lm_ortnamn_coords <- function(
     easting,
     northing,
     crs = 3006,
-    token = content(lm_get_token())$access_token) {
+    token = httr::content(lm_get_token())$access_token) {
 
   lm_ortnamn_kriterier(
     token = token,
     query = list(
-      punkt = str_c(northing, easting, sep = ","),
+      punkt = stringr::str_c(northing, easting, sep = ","),
       punktSrid = crs),
     as = "parsed") |>
     lm_ortnamn_unnest_parsed()

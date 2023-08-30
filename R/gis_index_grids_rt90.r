@@ -57,20 +57,20 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 	.x <- if_else(.x < x_min | .x >= x_max, NA, .x)
 
 	# Storruta (50 x 50 km)
-	bk_50 <- str_c(
+	bk_50 <- stringr::str_c(
 	  floor(1 + (.y - y_min) / 50000),
 	  LETTERS[floor(1 + (.x - x_min) / 50000)])
 
-	bk_50 <- case_when(
-	  pad0 == TRUE ~ str_pad(bk_50, width = 3, pad = 0),
+	bk_50 <- dplyr::case_when(
+	  pad0 == TRUE ~ stringr::str_pad(bk_50, width = 3, pad = 0),
 	  TRUE ~ bk_50)
 
 	# Småruta (5 x 5 km)
-	bk_5 <- str_c(
+	bk_5 <- stringr::str_c(
 	  floor((.y %% 50000) / 5000),
 	  letters[floor(1 + (.x %% 50000) / 5000)])
 
-	bk_5 <- case_when(
+	bk_5 <- dplyr::case_when(
 	  caps == TRUE ~ toupper(bk_5),
 	  TRUE ~ bk_5)
 
@@ -81,34 +81,34 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 		# Beräkning av RUBIN-kod
 		# nr & er avser avstånd från södra resp. västra kanten av ekorutan i antal METER
 		# y - (5000 * floor((y / 5000)))
-		nrubin <- str_pad(
+		nrubin <- stringr::str_pad(
 		  floor(.y %% 5000 / rubin_num),
 		  width = rubin_width(rubin_num),
 		  pad = "0")
 
-		erubin <- str_pad(
+		erubin <- stringr::str_pad(
 		  floor(.x %% 5000 / rubin_num),
 		  width = rubin_width(rubin_num),
 		  pad = "0")
 
 		if (rubin_space == FALSE) {
-			rubin_str <- str_c(nrubin, erubin)
+			rubin_str <- stringr::str_c(nrubin, erubin)
 		} else {
-			rubin_str <- str_c(" ", nrubin, erubin)
+			rubin_str <- stringr::str_c(" ", nrubin, erubin)
 		}
 	}
 
-	case_when(
+	dplyr::case_when(
 	  .grid_size == 1000 ~
-	    str_c(bk_50, bk_5,
-	          str_c(
+	    stringr::str_c(bk_50, bk_5,
+	          stringr::str_c(
 	            floor((.y %% 5000) / 1000),
 	            floor((.x %% 5000) / 1000)),
 	          sep = sep),
 	  .grid_size == 5000 ~
-	    str_c(bk_50, sep, bk_5, rubin_str),
+	    stringr::str_c(bk_50, sep, bk_5, rubin_str),
 	  .grid_size == 25000 ~
-	    str_c(bk_50,
+	    stringr::str_c(bk_50,
 	          quadrant_cardinal(
 	            floor(1 + (.y - y_min) / 50000),
 	            floor(1 + (.y - y_min) / 50000)),
@@ -120,11 +120,11 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 
 #' @export
 add_rt90_index <- function(data, .grid_size = c(50000, 25000, 5000), .prefix = "grid", ...) {
-  data %>%
-    bind_cols(
-      map(.grid_size, ~ rt90_index(.data, .grid_size = .x, ...)) %>%
-        setNames(str_c(.prefix, "_", str_replace(.grid_size/1000, "\\.", "\\_"))) %>%
-        bind_cols())
+  data |>
+    dplyr::bind_cols(
+      purrr::map(.grid_size, \(x) rt90_index(.data, .grid_size = x, ...)) |>
+        setNames(stringr::str_c(.prefix, "_", stringr::str_replace(.grid_size/1000, "\\.", "\\_"))) |>
+        dplyr::bind_cols())
 }
 
 

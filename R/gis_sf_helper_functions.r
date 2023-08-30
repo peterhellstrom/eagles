@@ -79,6 +79,44 @@ st_filter = function(.x, .y, .pred = st_intersects) {
   dplyr::filter(.x, lengths(.pred(.x, .y)) > 0)
 }
 
+
+# purrr::reduce does not work with sf-objects, need to drop geometry
+# https://github.com/r-spatial/sf/issues/798
+
+# Would be good to use dplyr::join_by with {{ .join_columns }}
+# rather than by argument, but can not get this to work:
+# Error: Expressions must use one of:
+#' @export
+st_join_n <- function(
+    .data,
+    .join_data,
+    .join_columns) {
+
+  .x <- purrr::map(
+    .join_data,
+    \(x) {
+      .data |>
+        sf::st_join(x) |>
+        sf::st_drop_geometry()
+    }
+  ) |>
+    purrr::reduce(
+      dplyr::left_join,
+      by = .join_columns
+    )
+
+  .data |>
+    dplyr::left_join(.x, by = .join_columns)
+}
+
+#' @export
+st_join_n_loop <- function(.data, .join_data) {
+  for (i in seq_along(.join_data)) {
+    .data <- .data |> sf::st_join(.join_data[[i]])
+  }
+  .data
+}
+
 #' @export
 list_layers <- function(x) {
   tibble::tibble(

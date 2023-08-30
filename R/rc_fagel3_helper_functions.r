@@ -39,20 +39,20 @@ gen_rc <- function(series, start, n, rc_format = TRUE) {
 # gen_rc("X", 0300, 100, TRUE)
 
 # Går också att använda tidyr::full_seq
-# str_c("N", str_pad(full_seq(c(9900, 9925), 1), width = 7, pad = " "))
+# stringr::str_c("N", stringr::str_pad(full_seq(c(9900, 9925), 1), width = 7, pad = " "))
 
 #' @export
 gen_ring_seq <- function(
     letter_start, num_start, num_end,
     width = 4, pad = "0") {
-  str_c(letter_start, str_pad(num_start:num_end, width = width, pad = pad))
+  stringr::str_c(letter_start, str_pad(num_start:num_end, width = width, pad = pad))
 }
 
 #' @export
 get_central <- function(.color2, .ring) {
-  .first_pos <- str_sub({{.ring}}, 1, 1)
+  .first_pos <- stringr::str_sub({{.ring}}, 1, 1)
 
-  case_when(
+  dplyr::case_when(
     {{.color2}} == "ALU" & {{.first_pos}} == "E" ~ "SFH",
     {{.color2}} == "ALU" & {{.first_pos}} %in% c("X", "N", "P") ~ "SVS",
     {{.color2}} %in% c("ALU/RÖD", "ALU/SVART", "RÖD", "RÖD/SVART", "RÖD/ALU") ~ "SFH",
@@ -63,34 +63,35 @@ get_central <- function(.color2, .ring) {
 
 #' @export
 import_from_fagel3 <- function(
-    con, sql_expr,
+    con,
+    sql_expr,
     as.is = TRUE,
     na_vec = c("", " ", "  "),
     clean_ring = FALSE,
     clean_names = TRUE,
     ...) {
 
-  x <- RODBC::sqlQuery(con, sql_expr, as.is = TRUE) %>%
-    as_tibble() %>%
-    # mutate(across(where(is.character), ~ na_if(., "")))
-    mutate(across(where(is.character),
-                  ~ if_else(. %in% na_vec, NA_character_, .)))
+  x <- RODBC::sqlQuery(con, sql_expr, as.is = TRUE) |>
+    tibble::as_tibble() |>
+    # dplyr::mutate(dplyr::across(tidyselect::where(is.character), \(x) na_if(x, "")))
+    mutate(across(tidyselect::where(is.character),
+                  \(x) if_else(x %in% na_vec, NA_character_, x)))
 
   if ("Datum" %in% names(x)) {
-    x <- x %>%
-      mutate(Datum = lubridate::ymd(str_sub(Datum, 1, 10)))
+    x <- x |>
+      dplyr::mutate(Datum = lubridate::ymd(str_sub(Datum, 1, 10)))
   }
 
   if (clean_ring) {
     if ("Ring" %in% names(x)) {
-      x <- x %>%
-        #mutate(Ring = str_replace_all(Ring, regex("\\s*"), ""))
-        mutate(Ring = stringi::stri_replace_all_charclass(Ring, "\\p{WHITE_SPACE}", ""))
+      x <- x |>
+        # dplyr::mutate(Ring = stringr::str_replace_all(Ring, regex("\\s*"), ""))
+        dplyr::mutate(Ring = stringi::stri_replace_all_charclass(Ring, "\\p{WHITE_SPACE}", ""))
     }
   }
 
   if (clean_names) {
-    x <- x %>% janitor::clean_names(...)
+    x <- x |> janitor::clean_names(...)
   }
 
   x
@@ -102,25 +103,25 @@ parse_province_midpt <- function(
     pattern = "(?<latd>[0-9]{2})(?<latm>[0-9]{2})(?<lath>[A-Z]{1})(?<lond>[0-9 ]+)(?<lonm>[0-9]{2})(?<lonh>[A-Z]{1})",
     col_names = c("lat_dd", "lon_dd")) {
 
-  m <- str_match(.x, pattern)
+  m <- stringr::str_match(.x, pattern)
   m <- data.frame(m)
-  m <- rename(m, "text_dm" = "V1")
-  m <- mutate(m, across(c(latd:latm, lond:lonm), as.integer))
+  m <- dplyr::rename(m, "text_dm" = "V1")
+  m <- dplyr::mutate(m, dplyr::across(c(latd:latm, lond:lonm), as.integer))
 
-  m <- mutate(
+  m <- dplyr::mutate(
     m,
-    lat_dd = case_when(
+    lat_dd = dplyr::case_when(
       lath == "S" ~ -latd - latm/60,
       lath == "N" ~ latd + latm/60,
       TRUE ~ NA_real_),
-    lon_dd = case_when(
+    lon_dd = dplyr::case_when(
       lonh == "W" ~ -lond - lonm/60,
       lonh == "E" ~ lond + lonm/60,
       TRUE ~ NA_real_
     ))
 
   out <- data.frame(m[,"lat_dd"], m[,"lon_dd"])
-  set_names(out, col_names)
+  rlang::set_names(out, col_names)
 
 }
 
@@ -153,56 +154,56 @@ fagel3_redovisn_fil <- function(
     .ringar = ringar,
     export = TRUE) {
 
-  x <- bind_rows(
+  x <- dplyr::bind_rows(
     df_c(
       markare,
       .prefix = "M"),
     df_c(
-      medhjalpare %>%
-        filter(mnr == mnr) %>%
-        select(-lop_nr) %>%
-        arrange(efternamn, fornamn),
+      medhjalpare |>
+        dplyr::filter(mnr == mnr) |>
+        dplyr::select(-lop_nr) |>
+        dplyr::arrange(efternamn, fornamn),
       .prefix = "H"),
     df_c(
-      signaturer %>%
-        filter(mnr == mnr) %>%
-        arrange(signatur),
+      signaturer |>
+        dplyr::filter(mnr == mnr) |>
+        dplyr::arrange(signatur),
       .prefix = "S"),
     df_c(
-      lokaler %>%
-        filter(mnr == mnr) %>%
-        arrange(lokal) %>%
-        mutate(across(latitud:longitud,
-                      ~ str_replace(round(., 5), "\\.", ","))),
+      lokaler |>
+        dplyr::filter(mnr == mnr) |>
+        dplyr::arrange(lokal) |>
+        dplyr::mutate(dplyr::across(latitud:longitud,
+                      \(x) str_replace(round(x, 5), "\\.", ","))),
       .prefix = "L"),
     df_c(
-      kontr %>%
-        select(-lop_nr) %>%
-        filter(str_detect(datum, year_filter)),
+      kontr |>
+        dplyr::select(-lop_nr) |>
+        dplyr::filter(stringr::str_detect(datum, year_filter)),
       .prefix = "C"),
     df_c(
-      kullar %>%
-        filter(str_detect(datum, year_filter)) %>%
-        arrange(id_kull),
+      kullar |>
+        dplyr::filter(stringr::str_detect(datum, year_filter)) |>
+        dplyr::arrange(id_kull),
       .prefix = "K"),
     df_c(
-      ringon %>%
-        filter(str_detect(datum, year_filter)) %>%
-        arrange(ring),
+      ringon |>
+        dplyr::filter(stringr::str_detect(datum, year_filter)) |>
+        dplyr::arrange(ring),
       .prefix = "R"),
     df_c(
-      ringar %>%
-        filter(mnr == mnr) %>%
-        select(-lager_id) %>%
-        arrange(f_num) %>%
-        mutate(slut = case_when(
+      ringar |>
+        dplyr::filter(mnr == mnr) |>
+        dplyr::select(-lager_id) |>
+        dplyr::arrange(f_num) |>
+        dplyr::mutate(slut = dplyr::case_when(
           slut == 1 ~ "True",
           TRUE ~ "False")),
       .prefix = "E"))
 
   if (export) {
     out_file <- glue::glue("{mnr}år-{year_filter}")
-    out_file <- str_c(add_timestamp(out_file), ".txt")
+    out_file <- stringr::str_c(add_timestamp(out_file), ".txt")
     readr::write_delim(
       x,
       out_file,
