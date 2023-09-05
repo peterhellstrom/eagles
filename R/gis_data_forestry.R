@@ -65,12 +65,17 @@ list_files_compare <- function(
   out
 }
 
+# Should first_appearance be kept as NA when adding first records to table?
+# The reasoning behind keeping NAs is that we don´t have the true
+# first occurence in the database, only the first occurence in downloaded data.
+
 #' @export
 create_db_version_control <- function(
     .data,
     dsn_out,
     layer_out,
     status = "valid",
+    first_appearance = NULL,
     index_field = "Beteckn",
     index_name = "idx_avverkanm_beteckn",
     append = FALSE,
@@ -85,9 +90,14 @@ create_db_version_control <- function(
     .data |>
       dplyr::mutate(
         status = status,
-        first_appearance = NA_character_,
-        last_appearance = NA_character_),
-    dsn = dsn_out, layer = layer_out, append = FALSE)
+        first_appearance = dplyr::case_when(
+          !is.null(first_appearance) ~ first_appearance,
+          TRUE ~ NA_character_),
+        last_appearance = NA_character_
+      ),
+    dsn = dsn_out,
+    layer = layer_out,
+    append = FALSE)
 
   con <- DBI::dbConnect(RSQLite::SQLite(), dsn_out)
   con_tbl <- DBI::dbListTables(con)
@@ -95,15 +105,19 @@ create_db_version_control <- function(
   #   con,
   #   "SELECT load_extension('mod_spatialite');")
 
+  # Create index
   DBI::dbExecute(
     con,
     glue::glue("CREATE INDEX {index_name} ON {layer_out} ({index_field});")
   )
 
+  # Create table
+  # Should add date_added, date_modified, and version_number
   if (!log_table_name %in% con_tbl) {
     DBI::dbExecute(
       con,
-      glue::glue("CREATE TABLE {log_table_name}(
+      glue::glue(
+      "CREATE TABLE {log_table_name}(
       original VARCHAR(40),
       revised VARCHAR(40),
       n_original INTEGER,
@@ -149,6 +163,9 @@ find_pending_db_updates <- function(
 
 }
 
+# IMPORTANT: the update of attributes in the deleted data set is incorrect,
+# must fix how last_appearance is updated, by changing to a correct
+# WHERE-critera.
 #' @export
 execute_db_updates <- function(
     original,
@@ -210,17 +227,20 @@ execute_db_updates <- function(
     dplyr::mutate(
       last_appearance = gsub(".zip$", "", original)
     ) |>
-    # dplyr::arrange(Inkomdatum, Beteckn) |>
     dplyr::select(last_appearance, Beteckn)
 
   # Should check number of updated rows here -
   # should be equal to nrow(updated) but can be more if
   # update conditions are met.
+  # Using Beteckn as only WHERE criteria is wrong,
+  # as records may have been updated more than once,
+  # and with this procedure last_apperance will always
+  # be the last occurence. Must change this.
 
   if (nrow(update_deleted) > 0) {
     DBI::dbExecute(
       con,
-      glue::glue("UPDATE {layer_out} SET status = 'deleted', last_appearance = ? WHERE (Beteckn = ?)"),
+      glue::glue("UPDATE {layer_out} SET status = 'deleted', last_appearance = ? WHERE (Beteckn = ? AND last_appearance IS NULL)"),
       params = update_deleted |>
         as.list() |>
         rlang::set_names(NULL)
@@ -234,15 +254,13 @@ execute_db_updates <- function(
           status = "valid",
           first_appearance = gsub(".zip$", "", revised),
           last_appearance = NA_character_
-        ) |>
-        dplyr::arrange(Beteckn),
-        # dplyr::arrange(Inkomdatum, Beteckn),
+        ),
       dsn = dsn_out,
       layer = layer_out,
       append = TRUE)
   }
 
-  # Should add timestamp column to log data table!
+  # Add data to log-table
   DBI::dbExecute(
     con,
     glue::glue("INSERT INTO {log_table_name} (original, revised, n_original, n_revised, n_added, n_deleted, n_unchanged) VALUES (?, ?, ?, ?, ?, ?, ?)"),
@@ -273,11 +291,16 @@ execute_db_updates <- function(
 }
 
 #' @export
-execute_db_updates_n <- function(.data, dsn_out, layer_out, ...) {
+execute_db_updates_n <- function(
+    .data,
+    dsn_out,
+    layer_out,
+    ...,
+    n = base::seq_len(nrow(.data))) {
+
   if (nrow(.data) > 0) {
     purrr::walk(
-      #.x = 1:5, # test case
-      .x = base::seq_len(nrow(.data)),
+      .x = n,
       \(x) {
         execute_db_updates(
           .data$original[x],
@@ -315,3 +338,16 @@ tmp_export_from_gpkg <- function(
     file.path(download_dir, glue::glue("{output_file}_{layer_suffix}.zip"))
   )
 }
+
+#' @export
+pad_avverk_beteckn <- function(
+    Beteckn,
+    pattern = " ([0-9]{1,5})\\-",
+    pad = "0",
+    width = 5) {
+
+  p2 <- str_c(" ", str_pad(str_match(Beteckn, pattern)[,2], pad = pad, width = width), "-")
+  str_replace(Beteckn, pattern, p2)
+}
+
+# pad_avverk_beteckn(c("A 1-2023", "A 1017-2017", "A 51541-2015"))

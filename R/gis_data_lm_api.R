@@ -199,7 +199,8 @@ lm_markhojd_geometry <- function(
     config = httr::add_headers(
       .headers = c(
         add_headers_token(token),
-        'Accept' = 'application/json')),
+        'Accept' = 'application/json')
+    ),
     httr::content_type_json(),
     body = geometry,
     encode = encode)

@@ -8,7 +8,6 @@ get_nvrid_wkt <- function(
     fill = TRUE) {
 
   wkt_str <- glue::glue("https://geodata.naturvardsverket.se/naturvardsregistret/rest/v3/omrade/{nvrid}/{beslutsstatus}/wkt")
-  # wkt_resp <- sapply(wkt_str, readLines, warn = FALSE)
   wkt_resp <- purrr::map_chr(wkt_str, \(x) readLines(x, warn = FALSE))
 
   xy <- sf::st_as_sfc(wkt_resp, crs = crs) |>
@@ -47,7 +46,9 @@ nv_rest_api <- function(
   p <- with(list(...), glue::glue(str_parameters))
   rest_url <- glue::glue("{base_url}/{p}")
 
-  x <- purrr::map_dfr(rest_url, \(x) jsonlite::fromJSON(txt = x)) |>
+  x <- purrr::map_dfr(
+    rest_url,
+    \(x) jsonlite::fromJSON(txt = x)) |>
     tibble::as_tibble()
 
   if (remove_atom_link) {
