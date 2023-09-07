@@ -197,7 +197,6 @@ execute_db_updates <- function(
     sf::st_geometry(revised_sf) <- "geometry"
   }
 
-  # To do: add possibility to set COMPARE_ATTRIBUTES as well
   result <- qgisprocess::qgis_run_algorithm(
     "native:detectvectorchanges",
     ORIGINAL = original_sf,
@@ -228,14 +227,6 @@ execute_db_updates <- function(
       last_appearance = gsub(".zip$", "", original)
     ) |>
     dplyr::select(last_appearance, Beteckn)
-
-  # Should check number of updated rows here -
-  # should be equal to nrow(updated) but can be more if
-  # update conditions are met.
-  # Using Beteckn as only WHERE criteria is wrong,
-  # as records may have been updated more than once,
-  # and with this procedure last_apperance will always
-  # be the last occurence. Must change this.
 
   if (nrow(update_deleted) > 0) {
     DBI::dbExecute(
@@ -312,6 +303,30 @@ execute_db_updates_n <- function(
       }
     )
   }
+}
+
+#' @export
+sks_log_table <- function(
+    dsn = "sks_avverkning_anmald_sverige.gpkg",
+    table_name = "log_data") {
+
+  con <- DBI::dbConnect(RSQLite::SQLite(), dsn)
+
+  # Add layer name to log table, extract layer name from variable original.
+  # Sort log table, newest posts first
+  log_table <- DBI::dbReadTable(con, table_name) |>
+    tibble::as_tibble() |>
+    dplyr::mutate(
+      layer = stringr::str_remove(original, "_.*")
+    ) |>
+    dplyr::group_by(layer) |>
+    dplyr::arrange(
+      desc(revised)
+    )
+
+  DBI::dbDisconnect(con)
+
+  log_table
 }
 
 #' @export

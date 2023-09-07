@@ -1,11 +1,11 @@
 #' @export
 parse_ring_rc <- function(.x, pattern = "[a-zA-Z]+", width = 8, pad = " ") {
 
-  part_1 <- str_extract(.x, pattern)
-  part_2 <- str_remove(.x, pattern)
-  r_rc <- case_when(
-    is.na(part_1) ~ str_pad(part_2, width = width, side = "left", pad = pad),
-    TRUE ~ str_c(part_1, str_pad(part_2, side = "left", pad = pad, width = width - nchar(part_1))))
+  part_1 <- stringr::str_extract(.x, pattern)
+  part_2 <- stringr::str_remove(.x, pattern)
+  r_rc <- dplyr::case_when(
+    is.na(part_1) ~ stringr::str_pad(part_2, width = width, side = "left", pad = pad),
+    TRUE ~ stringr::str_c(part_1, stringr::str_pad(part_2, side = "left", pad = pad, width = width - nchar(part_1))))
   r_rc
 }
 # parse_ring_rc(c("N5431", "E21003", "9158957", "N543A", "ABX333", "N 2310"))
@@ -74,8 +74,8 @@ import_from_fagel3 <- function(
   x <- RODBC::sqlQuery(con, sql_expr, as.is = TRUE) |>
     tibble::as_tibble() |>
     # dplyr::mutate(dplyr::across(tidyselect::where(is.character), \(x) na_if(x, "")))
-    mutate(across(tidyselect::where(is.character),
-                  \(x) if_else(x %in% na_vec, NA_character_, x)))
+    dplyr::mutate(dplyr::across(tidyselect::where(is.character),
+                  \(x) dplyr::if_else(x %in% na_vec, NA_character_, x)))
 
   if ("Datum" %in% names(x)) {
     x <- x |>

@@ -23,7 +23,7 @@ copy_from_gpkg <- function(
       ))
 
 
-  # walk(f_copy$command, ~ system(command = "cmd.exe", input = .x, show.output.on.console = TRUE))
+  # walk(f_copy$command, \(x) system(command = "cmd.exe", input = x, show.output.on.console = TRUE))
 
   # Or send as one command to cmd
   # (Check https://stackoverflow.com/questions/8055371/how-do-i-run-two-commands-in-one-line-in-windows-cmd)
