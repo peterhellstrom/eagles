@@ -4,9 +4,10 @@ is_installed <- function(mypkg) {
   mypkg %in% installed.packages()[,1]
 }
 
-install_missing_packages <- function(mypkg,
-                                     repos = "https://ftp.acc.umu.se/mirror/CRAN/",
-                                     dependencies = TRUE) {
+install_missing_packages <- function(
+    mypkg,
+    repos = "https://ftp.acc.umu.se/mirror/CRAN/",
+    dependencies = TRUE) {
 
   for (i in 1:length(mypkg)) {
     if (is.installed(mypkg[i]) == FALSE) {

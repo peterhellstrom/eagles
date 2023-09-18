@@ -37,8 +37,9 @@ reshape_species_year <- function(x) {
 #' @export
 falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 
-  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-ar/?lang=sv&art=",
-                        utils::URLencode(species), "&year=", year)
+  url <- glue::glue(
+    "https://www.falsterbofagelstation.se/strack/art-ar/?lang=sv&art={utils::URLencode(species)}&year={year}"
+  )
 
   x <- url |>
     xml2::read_html() |>
@@ -66,8 +67,9 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 #' @export
 falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 
-  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/art-alla-ar/?lang=sv&art=",
-                        utils::URLencode(species))
+  url <- glue::glue(
+    "https://www.falsterbofagelstation.se/strack/art-alla-ar/?lang=sv&art={utils::URLencode(species)}"
+  )
 
   x <- url |>
     xml2::read_html() |>
@@ -99,12 +101,18 @@ falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 #' @export
 falsterbo_year <- function(year) {
 
-  url <- stringr::str_c("https://www.falsterbofagelstation.se/strack/ar/?lang=sv&year=", year)
+  url <- glue::glue(
+    "https://www.falsterbofagelstation.se/strack/ar/?lang=sv&year={year}"
+  )
 
   x <- url |>
     xml2::read_html() |>
     rvest::html_elements("table") |>
-    rvest::html_table()
+    rvest::html_table(
+      trim = TRUE,
+      na.strings = c(" ", "-"),
+      convert = TRUE
+    )
 
   x <- x[[1]] |>
     dplyr::mutate(year = year) |>
@@ -114,5 +122,11 @@ falsterbo_year <- function(year) {
     dplyr::mutate(
       dplyr::across(augusti:tidyselect::last_col(), \(x) dplyr::na_if(x, "-")),
       dplyr::across(augusti:tidyselect::last_col(), \(x) stringr::str_replace_all(x, "\\s+", "")),
-      dplyr::across(augusti:tidyselect::last_col(), strtoi))
+      dplyr::across(augusti:tidyselect::last_col(), strtoi)
+    ) |>
+    dplyr::rename(
+      species = Art,
+      count = Summa,
+      average = `Medeltal per år`
+    )
 }

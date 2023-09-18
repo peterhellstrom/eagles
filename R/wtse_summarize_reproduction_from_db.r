@@ -36,9 +36,9 @@ wtse_columns <- function (
   dsn = "Havsorn",
   table = "luOvervakningUtfall",
   column = "OvervakningUtfallR",
-  encoding = "windows-1252") {
+  ...) {
 
-  con <- dbConnect(odbc::odbc(), dsn, encoding = encoding)
+  con <- dbConnect(odbc::odbc(), dsn, ...)
 
   tbl(con, table) %>%
     arrange(SortOrder) %>%

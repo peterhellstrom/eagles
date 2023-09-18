@@ -24,12 +24,18 @@ rubin_width <- function(x) {
 # någon av ytterlinjernas hörn. Men om vi matar in nedre vänstra hörnet,
 # blir ju resultatet 0!
 
-# Dependencies: stringr
-
 #' @export
-rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
-                       pad0 = FALSE, space = TRUE, caps = FALSE,
-                       rubin = FALSE, rubin_num = 1000, rubin_space = TRUE) {
+rt90_index <- function(
+    .x,
+    .y = NULL,
+    .grid_size = 5000,
+    pad0 = FALSE, space = TRUE, caps = FALSE,
+    rubin = FALSE, rubin_num = 1000, rubin_space = TRUE,
+    y_min = 6100000,
+    y_max = 7700000,
+    x_min = 1200000,
+    x_max = 1900000
+    ) {
 
   # Allowed grid sizes
   gs <- c(100, 50, 25, 10, 5, 1) * 1000
@@ -41,25 +47,29 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 
   # Extract coordinates if input is an sf-object
   if (class(.x)[1] == "sf") {
-    if (!sf::st_crs(.x)$epsg %in% c(3021, 3847)) {
+    if (sf::st_crs(.x)$epsg %in% c(3021, 3847) == FALSE) {
       stop("coordinate reference system must be epsg:3021 or epsg:3847")
     }
-    .xy <- st_extract_pt_coords(.x); .x <- .xy$.x; .y <- .xy$.y
+    .xy <- st_extract_pt_coords(.x)
+    .x <- .xy$.x
+    .y <- .xy$.y
   }
 
-	if (any(nchar(as.integer(.y)) != 7)) stop("y-coordinate must be given with 7 digits")
-	if (any(nchar(as.integer(.x)) != 7)) stop("x-coordinate must be given with 7 digits")
+	if (base::any(base::nchar(as.integer(.y)) != 7)) {
+	  stop("y-coordinate must be given with 7 digits")
+	}
+	if (base::any(base::nchar(as.integer(.x)) != 7)) {
+	  stop("x-coordinate must be given with 7 digits")
+	}
 
-	y_min <- 6100000; y_max <- 7700000
-	x_min <- 1200000; x_max <- 1900000
-
-	.y <- if_else(.y < y_min | .y >= y_max, NA, .y)
-	.x <- if_else(.x < x_min | .x >= x_max, NA, .x)
+	.y <- dplyr::if_else(.y < y_min | .y >= y_max, NA, .y)
+	.x <- dplyr::if_else(.x < x_min | .x >= x_max, NA, .x)
 
 	# Storruta (50 x 50 km)
 	bk_50 <- stringr::str_c(
 	  floor(1 + (.y - y_min) / 50000),
-	  LETTERS[floor(1 + (.x - x_min) / 50000)])
+	  LETTERS[floor(1 + (.x - x_min) / 50000)]
+	)
 
 	bk_50 <- dplyr::case_when(
 	  pad0 == TRUE ~ stringr::str_pad(bk_50, width = 3, pad = 0),
@@ -68,7 +78,8 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 	# Småruta (5 x 5 km)
 	bk_5 <- stringr::str_c(
 	  floor((.y %% 50000) / 5000),
-	  letters[floor(1 + (.x %% 50000) / 5000)])
+	  letters[floor(1 + (.x %% 50000) / 5000)]
+	)
 
 	bk_5 <- dplyr::case_when(
 	  caps == TRUE ~ toupper(bk_5),
@@ -100,41 +111,61 @@ rt90_index <- function(.x, .y = NULL, .grid_size = 5000,
 
 	dplyr::case_when(
 	  .grid_size == 1000 ~
-	    stringr::str_c(bk_50, bk_5,
-	          stringr::str_c(
-	            floor((.y %% 5000) / 1000),
-	            floor((.x %% 5000) / 1000)),
-	          sep = sep),
+	    stringr::str_c(
+	      bk_50, bk_5,
+	      stringr::str_c(
+	        floor((.y %% 5000) / 1000),
+	        floor((.x %% 5000) / 1000)
+	      ),
+	      sep = sep),
 	  .grid_size == 5000 ~
-	    stringr::str_c(bk_50, sep, bk_5, rubin_str),
+	    stringr::str_c(
+	      bk_50, sep, bk_5, rubin_str
+	    ),
 	  .grid_size == 25000 ~
-	    stringr::str_c(bk_50,
-	          quadrant_cardinal(
-	            floor(1 + (.y - y_min) / 50000),
-	            floor(1 + (.y - y_min) / 50000)),
-	          sep = sep),
+	    stringr::str_c(
+	      bk_50,
+	      stringr::str_c(
+	        dplyr::if_else(.y %% 50000 / 50000 >= 0.5, "S", "N"),
+	        dplyr::if_else(.x %% 50000 / 50000 < 0.5, "V", "O"),
+	        sep = ""),
+	      sep = sep),
 	  .grid_size == 50000 ~ bk_50,
 	  TRUE ~ NA
 	)
 }
 
 #' @export
-add_rt90_index <- function(data, .grid_size = c(50000, 25000, 5000), .prefix = "grid", ...) {
-  data |>
+add_rt90_index <- function(
+    .data,
+    .grid_size = c(50000, 25000, 5000),
+    .prefix = "grid",
+    ...) {
+
+  .data |>
     dplyr::bind_cols(
-      purrr::map(.grid_size, \(x) rt90_index(.data, .grid_size = x, ...)) |>
-        setNames(stringr::str_c(.prefix, "_", stringr::str_replace(.grid_size/1000, "\\.", "\\_"))) |>
-        dplyr::bind_cols())
+      purrr::map(
+        .grid_size,
+        \(x) rt90_index(.data, .grid_size = x, ...)
+      ) |>
+        rlang::set_names(
+          stringr::str_c(
+            .prefix, "_", stringr::str_replace(.grid_size/1000, "\\.", "\\_")
+          )
+        ) |>
+        dplyr::bind_cols()
+    )
 }
 
 
 # Test case:
 # (point 2 is on purpose outside the reference grid!)
-# data <- st_sf(a = 1:3,
-#               geom = st_sfc(
-#                 st_point(c(1582696, 6583013)),
-#                 st_point(c(1199547, 6524265)),
-#                 st_point(c(1691235, 7396695))), crs = 3847)
+# data <- st_sf(
+#   a = 1:3,
+#   geom = st_sfc(
+#     st_point(c(1582696, 6583013)),
+#     st_point(c(1199547, 6524265)),
+#     st_point(c(1691235, 7396695))), crs = 3847)
 # mapview::mapview(data)
 
 # rt90_index(data)

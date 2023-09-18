@@ -27,8 +27,8 @@ wtse_lkd_grid <- function(
     lkd_grid_lines <- .x |>
       # st_nearest points returns a LINESTRING geometry set
       sf::st_nearest_points(
-        grid_pts |>
-          dplyr::slice(grid_index), pairwise = TRUE) |>
+        .grid_pts |>
+          dplyr::slice(.grid_index), pairwise = TRUE) |>
       sf::st_as_sf() |>
       dplyr::rename(geometry = x)
 
@@ -39,7 +39,9 @@ wtse_lkd_grid <- function(
           sf::st_drop_geometry() |>
           tibble::as_tibble() |>
           dplyr::select(Region:Lokalkod)) |>
-      dplyr::mutate(length = st_length(.))
+      dplyr::mutate(
+        length = st_length(geometry)
+      )
 
     lkd_grid_lines
 
@@ -52,14 +54,14 @@ wtse_lkd_grid <- function(
       lkd_grid_pts <- lkd_grid_pts |>
         # convert from polygon to point
         sf::st_centroid() |>
-        dplyr::select(BK, Region:Lokalkod)
+        dplyr::select(ruta, Region:Lokalkod)
     } else if (position == "lower-left") {
       lkd_grid_pts <- lkd_grid_pts |>
         sf::st_cast("POINT") |>
-        dplyr::group_by(BK) |>
+        dplyr::group_by(ruta) |>
         dplyr::slice_head() |>
         dplyr::ungroup() |>
-        dplyr::select(BK, Region:Lokalkod)
+        dplyr::select(ruta, Region:Lokalkod)
     }
 
     lkd_grid_pts

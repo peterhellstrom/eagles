@@ -23,8 +23,15 @@ leaflet_crs_3006 <- function() {
 
 #' @export
 wms_add <- function(
-    map, group, url, layers, format = "image/png",
-    transparent = TRUE, opacity = 1, styles = "", ...) {
+    map,
+    group,
+    url,
+    layers,
+    format = "image/png",
+    transparent = TRUE,
+    opacity = 1,
+    styles = "",
+    ...) {
 
   leaflet::addWMSTiles(
     map = map,
@@ -64,7 +71,8 @@ wms_sources <- function(
 
 #' @export
 lm_basemaps <- function(
-    .data = NULL, crs = leaflet_crs_3006(),
+    .data = NULL,
+    crs = leaflet_crs_3006(),
     wms_layers = wms_layers_data,
     setView_lng = 16.15043,
     setView_lat = 59.60423,
@@ -345,7 +353,9 @@ tms_sources <- function(
 #' @export
 swe_tiles <- function(
     tile_providers = tms_layers_data,
-    lng = 15, lat = 62, zoom = 4) {
+    lng = 15,
+    lat = 62,
+    zoom = 4) {
 
   m <- leaflet::leaflet() |>
     leaflet::setView(lng = lng, lat = lat, zoom = zoom)
