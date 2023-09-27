@@ -1,225 +1,243 @@
-# If spatial = TRUE converts data to sf object,
-# and removes all points without spatial information.
-# to retrieve data in non-spatial form, use spatial = FALSE
+# If spatial = TRUE an sf object is returned,
+# To retrieve data in non-spatial form, use spatial = FALSE.
 # Prior to R 4.2, encoding = 'windows-1252' was used with
-# connection made with DBI-package, but the new native
-# UTF8 encoding support in R >= 4.2, does not work with MS Access
-# databases. RODBC connection is therefore used as standard connection.
+# connection made with DBI-package, but this is not necessary
+# since native UTF8 encoding support was introduced in R >= 4.2.
+# However, odbc connection to MS Access and UTF-8 strings might
+# introduce errors (right string truncation due to special characters).
+# A previous version of this function therefore had extra functionality
+# where it was possible to connect to an odbc source either with
+# the RODBC or the DBI package. This functionality was removed in
+# September 2023, in favor of the DBI package as the DBI errors were no longer
+# present.
+#
 #' @export
-wtse_lkd <- function(
-    odbc_name = "Havsorn_Data",
-    spatial = TRUE,
+wtse_sites <- function(
+    spatial = FALSE,
     crs = NULL,
     add_coordinates = FALSE,
-    names = c("x", "y"),
-    db_package = c("RODBC", "DBI"),
+    coordinate_cols = c("x", "y"),
+    odbc_name = "Havsorn_Data",
     encoding = "",
-    # encoding = "windows-1252",
-    db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg") {
+    add_subsites = TRUE,
+    add_monitoring = TRUE,
+    drop_id_columns = TRUE) {
 
-  db_package <- match.arg(db_package)
+  # Import data tables
+  # values = names of tables in odbc source.
+  # names = names of tables when imported to R an environment.
+  tbls <- c(
+    sites = "tLokaler", sites_sub = "tLokalerUnder",
+    sites_monitoring = "tLokalerOvervakning", county = "luGeografiLan",
+    municipality = "luGeografiKommun", province = "luGeografiLandskap",
+    district = "luGeografiDistrikt", report_area = "luGeografiRapportomrade",
+    sub_area = "luGeografiDelomrade", region = "luGeografiRegion"
+  )
 
-  # Importera tabeller.
-  # x = namn på objekt som skapas i R, y = motsvarande
-  # namn på tabeller i databasen.
-  l <- list(
-    x = list("lkd_db", "lkd_under_db",
-             "lkd_db_overv",
-             "lan", "kommun",
-             "landskap", "distrikt",
-             "rapportomr", "delomrade",
-             "region"),
-    y = list("tLokaler", "tLokalerUnder",
-             "tLokalerOvervakning",
-             "luGeografiLan", "luGeografiKommun",
-             "luGeografiLandskap", "luGeografiDistrikt",
-             "luGeografiRapportomrade", "luGeografiDelomrade",
-             "luGeografiRegion"))
+  con <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
+  on.exit(DBI::dbDisconnect(con))
 
-  # Ange vilken funktion som ska användas för att läsa in tabeller
-  if (db_package == "DBI") {
-    db_data_conn <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
-    db_f <- function (...) DBI::dbReadTable(...)
-  } else if (db_package == "RODBC") {
-    db_data_conn <- RODBC::odbcConnect(dsn = odbc_name)
-    db_f <- function(...) RODBC::sqlFetch(...)
-  }
-
-  # "Läs in" data till variablerna x.
-  # Exempel på vad som egentligen sker:
-  # assign("lkd_db", RODBC::sqlFetch(db_data_conn, "tLokaler") |> tibble::as_tibble(), envir = parent.frame(n = 2))
+  # Assign variables in the current R environment (= within the function)
+  # assign("lkd_db", RODBC::sqlFetch(con, "tLokaler") |> tibble::as_tibble(), envir = parent.frame(n = 2))
   # Men detta steg funkar inte i R 4.3.0, behöver sätta parent.frame(n = 3). Varför?
-  purrr::pmap(l, function(x, y) {
-    base::assign(x, db_f(db_data_conn, y) |> tibble::as_tibble(),
-           envir = base::parent.frame(n = 3)) })
 
-  if (db_package == "RODBC") {
-    lkd_db <- lkd_db |> dplyr::mutate(BoplatsOkand = base::as.logical(BoplatsOkand == 1))
+  purrr::map2(names(tbls), tbls, \(x, y) {
+    base::assign(
+      x, DBI::dbReadTable(con, y) |>
+        tibble::as_tibble(),
+      envir = base::parent.frame(n = 3)
+      # envir = globalenv() # Debug case, assign data to Global environment
+    )
+  })
+
+  # Re-format sites table, lookup text values/names based on ID-columns
+  sites <- sites |>
+    dplyr::arrange(LanID, Lokalkod) |>
+    named_join(region |> dplyr::select(RegionID, Region), RegionID) |>
+    named_join(county |> dplyr::select(LanID, Lan = LanBokstav), LanID) |>
+    named_join(municipality |> dplyr::select(KommunID, Kommun), KommunID) |>
+    named_join(province |> dplyr::select(LandskapID, Landskap = LandskapBokstav), LandskapID) |>
+    named_join(district |> dplyr::select(DistriktID, Distrikt), DistriktID) |>
+    named_join(report_area |> dplyr::select(RapportomradeID, Rapportomrade), RapportomradeID) |>
+    named_join(sub_area |> dplyr::select(DelomradeID, Delomrade), DelomradeID) |>
+    dplyr::relocate(Region:Delomrade, .after = LokalID) |>
+    # Drop some non-essential columns (this step might change)
+    dplyr::select(-Alias, -KommentarHemlig, -OrtnamnOsakert)
+
+  if (drop_id_columns) {
+    sites <- sites |>
+      dplyr::select(-c(LanID:DelomradeID))
   }
 
-  # Underlokaler
-  lkd_under_db <- lkd_under_db |>
-    dplyr::arrange(LokalID, LokalerUnderID) |>
-    dplyr::group_by(LokalID) |>
-    dplyr::summarize(LokalUnder = stringr::str_c(LokalUnder, collapse = " | "))
+  if (add_subsites) {
+    # Sub-sites, summarize to one row per main site.
+    sites_sub_sum <- sites_sub |>
+      dplyr::arrange(LokalID, LokalerUnderID) |>
+      dplyr::summarize(
+        LokalUnder = stringr::str_c(LokalUnder, collapse = " | "),
+        .by = LokalID
+      )
 
-  # Re-investigate here again, use named vectors or perhaps a map statement?
-	lkd <- lkd_db |>
-	  dplyr::arrange(LanID, Lokalkod) |>
-	  dplyr::left_join(region |> dplyr::select(RegionID, Region), dplyr::join_by(RegionID)) |>
-	  dplyr::left_join(lan |> dplyr::select(LanID, Lan = LanBokstav), dplyr::join_by(LanID)) |>
-	  dplyr::left_join(kommun |> dplyr::select(KommunID, Kommun), dplyr::join_by(KommunID)) |>
-	  dplyr::left_join(landskap |> dplyr::select(LandskapID, Landskap = LandskapBokstav), dplyr::join_by(LandskapID)) |>
-	  dplyr::left_join(distrikt |> dplyr::select(DistriktID, Distrikt), dplyr::join_by(DistriktID)) |>
-	  dplyr::left_join(rapportomr |> dplyr::select(RapportomradeID, Rapportomrade), dplyr::join_by(RapportomradeID)) |>
-	  dplyr::left_join(delomrade |> dplyr::select(DelomradeID, Delomrade), dplyr::join_by(DelomradeID)) |>
-	  dplyr::relocate(Region:Delomrade, .after = LokalID) |>
-	  dplyr::select(
-	    -c(LanID:DelomradeID),
-	    -Alias, -KommentarHemlig, -OrtnamnOsakert)
+    sites <- sites |>
+      dplyr::left_join(sites_sub_sum, dplyr::join_by(LokalID)) |>
+      dplyr::relocate(LokalUnder, .after = Lokalnamn)
+  }
 
-	lkd <- lkd |>
-	  dplyr::left_join(lkd_under_db, dplyr::join_by(LokalID)) |>
-	  dplyr::relocate(LokalUnder, .after = Lokalnamn)
+  if (add_monitoring) {
+    sites <- sites |>
+      dplyr::left_join(
+        sites_monitoring |> monitoring_summary(),
+        dplyr::join_by(LokalID)
+      )
+  }
 
-	# Summera årsposter och koppla till lkd
-	# This step is really slow in R 4.3.0 - investigate why!
-	# Confirmed that code is much faster in R 4.1.3. It is the case_when
-	# statements that causes trouble.
-	lkd_sum <- lkd_db_overv |>
-	  # dplyr::filter(CensusYear >= year(now()) - 6) |>
-	  dplyr::arrange(LokalID, CensusYear) |>
-	  dplyr::group_by(LokalID) |>
-	  dplyr::summarize(
-	    n_year_posts = dplyr::n(),
-	    missing_status = sum(is.na(OvervakningUtfallID), na.rm = TRUE),
-	    n_surveyed = sum(OvervakningUtfallID > 0, na.rm = TRUE),
-	    n_occupied = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 44, na.rm = TRUE),
-	    n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
-	    n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
-	    n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
-	    first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-	    last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE))
+  if (spatial | add_coordinates) {
 
-	lkd <- lkd |>
-	  dplyr::left_join(lkd_sum, dplyr::join_by(LokalID))
+    sites_coords <- get_sites_coords(con)
 
-	if (spatial | add_coordinates) {
+    if (!is.null(crs)) {
+      sites_coords <- sites_coords |>
+        sf::st_transform(crs = crs)
+    }
+  }
 
-	  # Add geographical data, SWEREF 99 TM
-	  lkd_koord_sql <-
-	    "SELECT DISTINCT ortnamn.lopnr AS Lopnr, ortnamn.ykoord AS Easting, ortnamn.xkoord AS Northing
+  if (spatial) {
+
+    sites <- sites |>
+      dplyr::inner_join(
+        sites_coords,
+        dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
+      sf::st_sf()
+
+    if (add_coordinates) {
+      sites <- sites |> sfc_as_cols(names = coordinate_cols)
+    }
+
+  } else if (!spatial) {
+
+    if (add_coordinates) {
+
+      sites <- sites |>
+        dplyr::left_join(
+          sites_coords |>
+            sfc_as_cols(names = coordinate_cols) |>
+            sf::st_drop_geometry(),
+          dplyr::join_by(Ortnamn_LOPNR == Lopnr)
+        )
+    }
+  }
+
+  sites
+}
+
+# Examples
+# lkd <- wtse_sites(spatial = FALSE)
+# lkd |> View()
+# lkd |> dplyr::count(Region)
+# lkd |> dplyr::select(BoplatsOkand, date_created, date_modified)
+# lkd_id <- wtse_sites(spatial = FALSE, drop_id_columns = FALSE, add_monitoring = FALSE)
+# lkd_id |>
+#   dplyr::count(RegionID, Region, LanID, Lan) |>
+#   print(n = Inf)
+# Argument order:
+# spatial = TRUE, crs = NULL, add_coordinates = FALSE
+# wtse_sites(TRUE, NULL, TRUE, add_monitoring = FALSE)
+# wtse_sites(TRUE, NULL, FALSE, add_monitoring = FALSE)
+# wtse_sites(TRUE, 4326, FALSE, add_monitoring = FALSE)
+# wtse_sites(TRUE, 4326, TRUE, coordinate_cols = c("longitude", "latitude"), add_monitoring = FALSE)
+# wtse_sites(FALSE, NULL, FALSE, add_monitoring = FALSE)
+# wtse_sites(FALSE, 3847, FALSE, add_monitoring = FALSE)
+# wtse_sites(FALSE, NULL, TRUE, add_monitoring = FALSE)
+# wtse_sites(FALSE, NULL, TRUE, add_monitoring = FALSE, coordinate_cols = c("Easting", "Northing"))
+# wtse_sites(FALSE, 3847, TRUE, coordinate_cols = c("Easting", "Northing"), add_monitoring = FALSE)
+# wtse_sites(FALSE, 4326, TRUE, coordinate_cols = c("longitude", "latitude"), add_monitoring = FALSE)
+
+# Sum yearly monitoring posts per site
+# This function was really slow in R 4.3.0!
+# I hade re-written the function based on dplyr::case_when statements.
+# But it was confirmed that code is much faster in R 4.1.3. It is the case_when
+# statements that causes trouble.
+monitoring_summary <- function(.data, .by_column = LokalID) {
+  .data |>
+    # dplyr::filter(CensusYear >= year(now()) - 6) |>
+    dplyr::arrange(LokalID, CensusYear) |>
+    dplyr::summarize(
+      n_year_posts = dplyr::n(),
+      missing_status = sum(is.na(OvervakningUtfallID), na.rm = TRUE),
+      n_surveyed = sum(OvervakningUtfallID > 0, na.rm = TRUE),
+      n_occupied = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 44, na.rm = TRUE),
+      n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
+      n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
+      n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
+      first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      .by = {{ .by_column }}
+    )
+}
+
+named_join <- function(.data, .lookup_table, .join_cols) {
+  .data |>
+    dplyr::left_join(
+      .lookup_table,
+      dplyr::join_by( {{ .join_cols }} )
+    )
+}
+
+get_sites_coords <- function(con) {
+  # Add geographical data (in SWEREF99 TM)
+  # Source data is "hard-coded" in the data connection.
+  # db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg"
+  # NOTE: The GeoPackage dataset is a linked table in the
+  # wtse database backend (Havsorn_Data). MS Access can not
+  # deal with spatial datatypes, so it is necessary to
+  # reformat the WKT representation of the geometry column in
+  # MS Access to simple features.
+  # This could be avoided if it is/would be possible to
+  # construct an SQL query combining data from tables in
+  # more than one data source (e.g. a GeoPackage and an MS Access db).
+
+  str_sql <-
+    "SELECT DISTINCT ortnamn.lopnr AS Lopnr, ortnamn.geom
 		    FROM tLokaler
 		    INNER JOIN ortnamn ON tLokaler.Ortnamn_LOPNR = ortnamn.lopnr
 		    ORDER BY ortnamn.lopnr;"
 
-	  if (db_package == "DBI") {
-	    db_f_coords <- function(...) DBI::dbGetQuery(...)
-	  } else if (db_package == "RODBC") {
-	    db_f_coords <- function(...) RODBC::sqlQuery(...)
-	  }
+  x <- DBI::dbGetQuery(
+    con, str_sql
+  ) |>
+    tibble::as_tibble() |>
+    dplyr::mutate(
+      geom = stringr::str_extract(geom, "(?<=X').*(?=')")
+    )
 
-	  lkd_koord <- db_f_coords(db_data_conn, lkd_koord_sql) |>
-	    tibble::as_tibble()
-	}
+  x$geom <- sf::st_as_sfc(
+    structure(as.list(x$geom), class = "WKB"), EWKB = TRUE
+  )
 
-	if (spatial) {
-
-	  lkd_sf <- lkd |>
-	    dplyr::inner_join(lkd_koord, dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
-	    sf::st_as_sf(coords = c("Easting", "Northing"), crs = 3006)
-
-	  if (!is.null(crs)) lkd_sf <- lkd_sf |> sf::st_transform(crs = crs)
-	  if (add_coordinates) lkd_sf <- lkd_sf |> sfc_as_cols(names = names)
-
-	  return(lkd_sf)
-	} else if (!spatial) {
-	  if (add_coordinates) {
-	    if(!is.null(crs)) {
-
-	      lkd_koord <- lkd_koord |>
-	        sf::st_as_sf(coords = c("Easting", "Northing"), crs = 3006) |>
-	        sf::st_transform(crs) |>
-	        sfc_as_cols(names = names) |>
-	        sf::st_drop_geometry() |>
-	        tibble::as_tibble()
-
-	      lkd <- lkd |>
-	        dplyr::left_join(lkd_koord, dplyr::join_by (Ortnamn_LOPNR == Lopnr))
-
-	    } else {
-
-	      lkd <- lkd |>
-	        dplyr::left_join(lkd_koord, dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
-	        dplyr::rename_with(~ names, c(Easting, Northing))
-	    }
-	  }
-	  return(lkd)
-	}
-
-	if (db_package == "DBI") {
-		on.exit(DBI::dbDisconnect(db_data_conn))
-	} else if (db_package == "RODBC") {
-	  on.exit(RODBC::odbcClose(db_data_conn))
-	}
-
-	return(lkd)
+  x |> sf::st_sf()
 }
-
-# Examples ----
-# Problem with RODBC: doesn't close connection properly if used within function
-# "In .Internal(gc(verbose, reset, full)) : closing unused RODBC handle"
-
-# Differences RODBC / DBI -package
-# RODBC does not read logical fields properly, must convert 0/1 to TRUE/FALSE
-# Date/time: tzone attributes are inconsistent. DBI uses UTC (but is this correct?)
-# lkd_dbi <- wtse_lkd(spatial = FALSE, db_package = "DBI", encoding = "")
-# lkd_rodbc <- wtse_lkd(spatial = FALSE, db_package = "RODBC")
-#
-# lkd_rodbc <- lkd_rodbc |>
-#   dplyr::mutate(BoplatsOkand = as.logical(BoplatsOkand == 1))
-#
-# all.equal(lkd_dbi, lkd_rodbc)
-#
-# chk_inds <- which(lkd_dbi$KommentarPublik != lkd_rodbc$KommentarPublik)
-# lkd_dbi$KommentarPublik[chk_inds]
-# lkd_rodbc$KommentarPublik[chk_inds]
-#
-# lkd_dbi |> dplyr::count(Region)
-# lkd_rodbc |> dplyr::count(Region)
-#
-# lkd_dbi |> dplyr::select(BoplatsOkand, date_created, date_modified)
-# lkd_rodbc |> dplyr::select(BoplatsOkand, date_created, date_modified)
-#
-# wtse_lkd(spatial = FALSE, add_coordinates = TRUE)
-# wtse_lkd(spatial = TRUE, add_coordinates = TRUE)
-# wtse_lkd(spatial = FALSE, crs = 3847, add_coordinates = TRUE, names = c("Easting", "Northing"))
-# wtse_lkd(spatial = TRUE, crs = 4326, add_coordinates = FALSE)
-# wtse_lkd(spatial = TRUE, crs = 4326, add_coordinates = TRUE, names = c("lat", "long"))
 
 # Format site codes to common format
 #' @export
-wtse_lkd_str <- function(.x, pattern = "([0-9]{1,3})") {
-	.x |>
-  # remove all spaces
-	stringr::str_replace_all("[[:blank:]]", "") |>
-	# Extract and pad numeric part
-  stringr::str_replace_all(
-    pattern,
-    \(x) stringr::str_pad(x, width = 3, pad = "0")) |>
-	# remove any trailing inland "i"
-	stringr::str_replace("([i]{1}$)", "") |>
-	# convert all characters to upper
-	stringr::str_to_upper() |>
-	# trim whitespace
-	stringr::str_trim()
+wtse_sites_str <- function(.x, pattern = "([0-9]{1,3})") {
+  .x |>
+    # remove all spaces
+    stringr::str_replace_all("[[:blank:]]", "") |>
+    # Extract and pad numeric part
+    stringr::str_replace_all(
+      pattern,
+      \(x) stringr::str_pad(x, width = 3, pad = "0")) |>
+    # remove any trailing inland "i"
+    stringr::str_replace("([i]{1}$)", "") |>
+    stringr::str_to_upper() |>
+    stringr::str_trim()
 }
 
 #' @export
-wtse_lkd_str_old <- function(.x) {
+wtse_sites_str_old <- function(.x) {
   .x |>
     stringr::str_replace_all("[[:blank:]]", "") |>
     stringr::str_sub(2) |>
@@ -231,15 +249,15 @@ wtse_lkd_str_old <- function(.x) {
 
 # x <- tibble::tibble(lokalkod = c("E2/4", " H7b   ", "C98i", "C98 i", "C9 8 i", "C3B2", "X4", "X004", "x4b", "X4b", "C3/15"))
 # x |>
-#   dplyr::mutate(lokalkod_test = wtse_lkd_str(lokalkod) |> wtse_lkd_str(.))
+#   dplyr::mutate(lokalkod_test = wtse_sites_str(lokalkod) |> wtse_sites_str(.))
 # OBS! Denna funktion gör inga förändringar för koder som C315 och C917!
 #
 # .x <- c("B1", "B11", "B11B", "B111", "E2/4", "C3/15", "C3B2", "B1 ", "B102i")
-# wtse_lkd_str(.x)
+# wtse_sites_str(.x)
 #
 # Change "the other way", i.e. remove zeros
 # .x <- c("B020", "B020B", "B001", "B011", "B011B", "B111", "E002/004", "C003/015", "C003B2", "B001 ", "B100", "B101", "B102i")
-# wtse_lkd_str_old(.x)
+# wtse_sites_str_old(.x)
 #
 # Extract numeric part
 # .x |> stringr::str_extract_all("[[:digit:]]+")

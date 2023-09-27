@@ -1,5 +1,5 @@
 #' @export
-wtse_lkd_grid <- function(
+wtse_sites_grid <- function(
     .x,
     .grid,
     type = c("LINESTRING", "POINT"),

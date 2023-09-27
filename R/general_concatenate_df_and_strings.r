@@ -1,6 +1,10 @@
 #' @export
-df_c <- function(.x, sep = "|", .field = data,
-                 .prefix = NULL, remove = TRUE) {
+df_c <- function(
+    .x,
+    sep = "|",
+    .field = data,
+    .prefix = NULL,
+    remove = TRUE) {
 
   if (!is.null(.prefix)) {
     .prefix <- stringr::str_c(.prefix, sep)
@@ -8,11 +12,22 @@ df_c <- function(.x, sep = "|", .field = data,
 
   .x |>
     dplyr::mutate(
-      # dplyr::across(tidyselect::everything(), \(x) na_if(x, "")),
-      dplyr::across(dplyr::where(is.character), \(x) na_if(x, "")),
-      dplyr::across(tidyselect::everything(), \(x) tidyr::replace_na(as.character(x), ""))) |>
-    tidyr::unite({{.field}}, tidyselect::everything(), sep = sep, remove = remove) |>
-    dplyr::mutate({{.field}} := stringr::str_c(.prefix, {{.field}}, sep))
+      # dplyr::across(
+      #   tidyselect::everything(), \(x) na_if(x, "")
+      # ),
+      dplyr::across(
+        dplyr::where(is.character), \(x) na_if(x, "")
+      ),
+      dplyr::across(
+        tidyselect::everything(), \(x) tidyr::replace_na(as.character(x), "")
+      )
+    ) |>
+    tidyr::unite(
+      {{ .field }}, tidyselect::everything(), sep = sep, remove = remove
+    ) |>
+    dplyr::mutate(
+      {{ .field }} := stringr::str_c(.prefix, {{ .field }}, sep)
+    )
 }
 
 # Sammanfoga strängar, endast unika värden ----

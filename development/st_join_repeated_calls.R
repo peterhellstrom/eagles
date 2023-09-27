@@ -33,7 +33,7 @@ admin_boundaries <- purrr::map(
 )
 
 # Import territories and nests ----
-lkd <- eagles::wtse_lkd(spatial = TRUE, db_package = "DBI", encoding = "") |>
+lkd <- eagles::wtse_sites(spatial = TRUE, db_package = "DBI", encoding = "") |>
   dplyr::select(Lokalkod, Lokalnamn)
 
 nests <- sf::read_sf(dsn_wtse, "wpt_nests")

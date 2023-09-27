@@ -8,18 +8,26 @@ grid_polygons <- function(
     x_range, y_range,
     delta_x, delta_y,
     crs,
-    order = "clockwise") {
+    direction = "clockwise") {
 
 	n_x <- (max(x_range) - min(x_range)) / delta_x
 	n_y <- (max(y_range) - min(y_range)) / delta_y
 
-	grid_corners <- expand.grid(
-		x = seq(min(x_range), by = delta_x, length.out = n_x),
-		y = seq(min(y_range), by = delta_y, length.out = n_y))
+	grid_corners <- base::expand.grid(
+		x = base::seq(min(x_range), by = delta_x, length.out = n_x),
+		y = base::seq(min(y_range), by = delta_y, length.out = n_y)
+	)
 
 	m <- purrr::map2(
-	  grid_corners$x, grid_corners$y,
-	  \(x,y) grid_cell(x, y, delta_x = delta_x, delta_y = delta_y, order = order))
+	  grid_corners$x,
+	  grid_corners$y,
+	  \(x,y) {
+	    grid_cell(
+	      x, y,
+	      delta_x = delta_x, delta_y = delta_y,
+	      direction = direction)
+	  }
+	)
 
 	sf::st_sfc(m, crs = crs)
 }
@@ -48,7 +56,7 @@ grid_cell <- function(
     delta_x, delta_y,
     direction = c("clockwise", "counter-clockwise")) {
 
-  direction <- match.arg(direction)
+  direction <- base::match.arg(direction)
 
   x_max <- x_min + delta_x
   y_max <- y_min + delta_y
@@ -70,8 +78,10 @@ grid_cell <- function(
   }
 
   sf::st_polygon(
-    list(
-      matrix(xy_vec, nrow = 5, ncol = 2, byrow = TRUE)))
+    base::list(
+      base::matrix(xy_vec, nrow = 5, ncol = 2, byrow = TRUE)
+    )
+  )
 }
 # grid_cell(1300000, 6100000, 50000, 50000, direction = "clockwise")
 # grid_cell(1300000, 6100000, 50000, 50000, direction = "counter-clockwise")
@@ -82,14 +92,16 @@ grid_parms <- function(
     min_x = 200000, max_x = 1000000,
     min_y = 6100000, max_y = 7700000) {
 
-  n_x <- ceiling((max_x - min_x) / delta_x)
+  n_x <- base::ceiling((max_x - min_x) / delta_x)
   x <- min_x + (0:n_x * delta_x)
 
-  n_y <- ceiling((max_y - min_y) / delta_y)
+  n_y <- base::ceiling((max_y - min_y) / delta_y)
   y <- min_y + (0:n_y * delta_y)
 
-  list(delta_x = delta_x, n_x = n_x, x = x,
-       delta_y = delta_y, n_y = n_y, y = y)
+  base::list(
+    delta_x = delta_x, n_x = n_x, x = x,
+    delta_y = delta_y, n_y = n_y, y = y
+  )
 }
 
 # .x = numeric coordinate in e.g. EPSG:3006 or EPSG:3847, EPSG:3021
@@ -127,7 +139,7 @@ extract_lower_left <- function(.data, .grp = L2) {
   .data |>
     sf::st_coordinates() |>
     tibble::as_tibble() |>
-    dplyr::group_by({{.grp}}) |>
+    dplyr::group_by( {{ .grp }} ) |>
     dplyr::arrange(X, Y) |>
     dplyr::slice_head() |>
     dplyr::ungroup() |>
@@ -138,24 +150,50 @@ extract_lower_left <- function(.data, .grp = L2) {
 extract_lower_left_2 <- function(.data, .grp = ruta) {
   .data |>
     sf::st_cast("POINT") |>
-    dplyr::group_by({{ .grp }}) |>
+    dplyr::group_by( {{ .grp }} ) |>
     dplyr::slice_head() |>
     dplyr::ungroup()
 }
 
 #' @export
+grid_filter <- function(
+    data,
+    filter_col,
+    filter_value,
+    grid_size,
+    .fn = eagles::sweref99_index) {
+  sf::st_make_grid(
+    data |>
+      dplyr::filter( {{ filter_col}} == filter_value) |>
+      sf::st_bbox() |>
+      eagles::st_bbox_round(.size = grid_size),
+    cellsize = grid_size) |>
+    sf::st_sf(geometry = _) |>
+    {(\(.) mutate(
+      .,
+      ruta = .fn(st_centroid(x = .), .grid_size = grid_size))
+    )}() |>
+    eagles::st_filter(
+      sf::st_union(
+        data |>
+          dplyr::filter( {{ filter_col }} == filter_value)
+      )
+    )
+}
+
+#' @export
 gdaltindex <- function(file_name, file_list) {
 
-  file_conn <- file(glue::glue("{file_name}.txt"))
-  writeLines(file_list, file_conn)
-  close(file_conn)
+  file_conn <- base::file(glue::glue("{file_name}.txt"))
+  base::writeLines(file_list, file_conn)
+  base::close(file_conn)
 
-  system(
+  base::system(
     command = "cmd.exe",
     input = glue::glue("gdaltindex -f GPKG {file_name}.gpkg --optfile {file_name}.txt"),
     show.output.on.console = TRUE)
 
-  unlink(glue::glue("{file_name}.txt"))
+  base::unlink(glue::glue("{file_name}.txt"))
 }
 
 #' @export
@@ -169,7 +207,7 @@ layout_grid_size <- function(
   layout_scale <- map_scale / overlap
 
   layout_scale <- dplyr::case_when(
-    round == TRUE ~ round(layout_scale, 0),
+    round == TRUE ~ base::round(layout_scale, 0),
     TRUE ~ layout_scale)
 
   overlap <- map_scale / layout_scale
@@ -177,13 +215,24 @@ layout_grid_size <- function(
   delta_x <- map_frame_x / (100 * overlap / map_scale)
   delta_y <- map_frame_y / (100 * overlap / map_scale)
 
-  # Should output be data.frame instead of a vector, c()
+  # Should output be data.frame instead of a vector, c()?
   c(
     map_scale = map_scale,
     layout_scale = layout_scale,
     overlap = overlap,
     delta_x = delta_x,
-    delta_y = delta_y)
+    delta_y = delta_y
+  )
+}
+
+find_page_number <- function(.data, row_offset, col_offset, page_variable) {
+  base::with(.data, {
+    inds <- base::match(
+      base::paste(grid_row + row_offset, grid_column + col_offset),
+      base::paste(grid_row, grid_column)
+    )
+    .data[inds, page_variable]
+  })
 }
 
 #' @export
@@ -194,78 +243,83 @@ add_grid_neighbours <- function(
     sep = "_",
     add_neighbours = TRUE) {
 
-  direction <- match.arg(direction)
+  direction <- base::match.arg(direction)
 
-  map_grid <- map_grid %>%
-    bind_cols(
-      map_dfr(
-        seq_len(nrow(map_grid)), ~ st_bbox(map_grid[.x,])[1:4]))
-
-  map_grid <- map_grid %>%
+  # Add bounding box for each grid cell,
+  # then calculate extent in x and y-direction
+  map_grid <- map_grid |>
     mutate(
+      purrr::map_dfr(
+        base::seq_len(base::nrow(map_grid)),
+        \(x) sf::st_bbox(map_grid[x,])[1:4]
+      ),
       dx = xmax - xmin,
-      dy = ymax - ymin)
+      dy = ymax - ymin
+    )
 
+  # Calculate grid rows and columns
   if (direction == "s-n") {
-    map_grid <- map_grid %>%
-      mutate(
-        grid_row = round( (((ymin - min(ymin)) / dy) + 1), 0),
-        grid_column = round( (((xmin - min(xmin)) / dx) + 1), 0))
+    map_grid <- map_grid |>
+      dplyr::mutate(
+        grid_row = base::round( (((ymin - min(ymin)) / dy) + 1), 0),
+        grid_column = base::round( (((xmin - min(xmin)) / dx) + 1), 0)
+      )
   } else if (direction == "n-s") {
-    map_grid <- map_grid %>%
-      mutate(
-        grid_row = round( (((max(ymax) - ymax) / dy) + 1), 0),
-        grid_column = round( (((xmin - min(xmin)) / dx) + 1), 0)) %>%
-      arrange(grid_row, grid_column)
-
+    map_grid <- map_grid |>
+      dplyr::mutate(
+        grid_row = base::round( (((max(ymax) - ymax) / dy) + 1), 0),
+        grid_column = base::round( (((xmin - min(xmin)) / dx) + 1), 0)) |>
+      dplyr::arrange(grid_row, grid_column)
   }
 
-  map_grid <- map_grid %>%
-    mutate({{page_variable}} := row_number())
+  # Add row number variable
+  map_grid <- map_grid |>
+    dplyr::mutate(
+      {{ page_variable }} := dplyr::row_number()
+    )
 
   if (add_neighbours) {
-    # Keep only attributes, as a data frame.
-    # Do NOT convert to tibble, since subsetting a tibble and data frame works differently.
-    # The syntax used here, df[test_expression, extract_variable] is not equal to
-    # df[test_expression, ]$extract_variable if df is a tibble.
-    .d <- map_grid %>%
-      st_drop_geometry()
+
+    .d <- map_grid |>
+      sf::st_drop_geometry() |>
+      as.data.frame()
 
     if (direction == "s-n") {
       row_offset <- 1
-      col_offset <- 1 }
-    else if (direction == "n-s") {
+      col_offset <- 1
+    } else if (direction == "n-s") {
       row_offset <- -1
       col_offset <- 1
     }
 
-    .m <- lapply(seq_len(nrow(.d)), function(i) {
-      .p <- with(.d, {
-        list(
-          NW = .d[grid_row == grid_row[i] + row_offset & grid_column == grid_column[i] - col_offset, page_variable],
-          N  = .d[grid_row == grid_row[i] + row_offset & grid_column == grid_column[i], page_variable],
-          NE = .d[grid_row == grid_row[i] + row_offset & grid_column == grid_column[i] + col_offset, page_variable],
-          W  = .d[grid_row == grid_row[i] & grid_column == grid_column[i] - col_offset, page_variable],
-          E  = .d[grid_row == grid_row[i] & grid_column == grid_column[i] + col_offset, page_variable],
-          SW = .d[grid_row == grid_row[i] - row_offset & grid_column == grid_column[i] - col_offset, page_variable],
-          S  = .d[grid_row == grid_row[i] - row_offset & grid_column == grid_column[i], page_variable],
-          SE = .d[grid_row == grid_row[i] - row_offset & grid_column == grid_column[i] + col_offset, page_variable])
-      })
-      .p[which(lengths(.p) == 0)] <- NA
-      .p
-    })
+    map_grid <- map_grid |>
+      {\(.) mutate(
+        .,
+        "{page_variable}{sep}NW" := find_page_number(.d, +row_offset, -col_offset, page_variable),
+        "{page_variable}{sep}N"  := find_page_number(.d, +row_offset, 0          , page_variable),
+        "{page_variable}{sep}NE" := find_page_number(.d, +row_offset, +col_offset, page_variable),
+        "{page_variable}{sep}W"  := find_page_number(.d, 0          , -col_offset, page_variable),
+        "{page_variable}{sep}E"  := find_page_number(.d, 0          , +col_offset, page_variable),
+        "{page_variable}{sep}SW" := find_page_number(.d, -row_offset, -col_offset, page_variable),
+        "{page_variable}{sep}S"  := find_page_number(.d, -row_offset, 0          , page_variable),
+        "{page_variable}{sep}SE" := find_page_number(.d, -row_offset, +col_offset, page_variable)
+      )
+      }()
 
-    map_grid <- map_grid %>%
-      bind_cols(
-        map_dfr(.m, bind_rows) %>%
-          rename_with(.cols = everything(), function(x) {str_c(page_variable, x, sep = sep)}))
+    map_grid <- map_grid |>
+      relocate(geometry, .after = last_col())
+    # attr(map_grid, "sf_column")
 
     # Convert numeric values to text, and replace NA with "empty string"
-    # When and why is this step necessary?
+    # When and why is this? Dynamic text in ArcGIS or QGIS?
 
-    # map_grid <- map_grid %>%
-    #   mutate(across(str_c(page_variable, "NW", sep = sep):str_c(page_variable, "SE", sep = sep), ~ as.character(.x))) %>%
-    #   mutate(across(str_c(page_variable, "NW", sep = sep):str_c(page_variable, "SE", sep = sep), ~ replace_na(.x, "")))
+    # map_grid <- map_grid |>
+    #   dplyr::mutate(
+    #     dplyr::across(
+    #       tidyselect::starts_with(page_variable), \(x) as.character(x) |> replace_na("")
+    #     )
+    #   )
   }
+
   map_grid
 }

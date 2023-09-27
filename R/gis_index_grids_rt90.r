@@ -23,6 +23,7 @@ rubin_width <- function(x) {
 # Fungerar ju om en punkt ligger helt inne i en cell och inte tangerar
 # någon av ytterlinjernas hörn. Men om vi matar in nedre vänstra hörnet,
 # blir ju resultatet 0!
+# To do: check behavior if data input (.x, .y) contains NAs.
 
 #' @export
 rt90_index <- function(
@@ -43,7 +44,7 @@ rt90_index <- function(
   g <- .grid_size
   stopifnot(all(g %in% gs))
 
-  sep <- if_else(space, " ", "")
+  sep <- dplyr::if_else(space, " ", "")
 
   # Extract coordinates if input is an sf-object
   if (class(.x)[1] == "sf") {
@@ -55,7 +56,8 @@ rt90_index <- function(
     .y <- .xy$.y
   }
 
-	if (base::any(base::nchar(as.integer(.y)) != 7)) {
+  # Code breaks here if input variables contain NAs?
+  if (base::any(base::nchar(as.integer(.y)) != 7)) {
 	  stop("y-coordinate must be given with 7 digits")
 	}
 	if (base::any(base::nchar(as.integer(.x)) != 7)) {
@@ -126,7 +128,7 @@ rt90_index <- function(
 	    stringr::str_c(
 	      bk_50,
 	      stringr::str_c(
-	        dplyr::if_else(.y %% 50000 / 50000 >= 0.5, "S", "N"),
+	        dplyr::if_else(.y %% 50000 / 50000 < 0.5, "S", "N"),
 	        dplyr::if_else(.x %% 50000 / 50000 < 0.5, "V", "O"),
 	        sep = ""),
 	      sep = sep),
@@ -177,33 +179,35 @@ add_rt90_index <- function(
 
 # input variable grid should in future versions be parsed
 # with regular expressions, and not with substr()
-# Should add grid size 25 here as well, possibly also RUBIN coordinates
-	# x: indexruta, längd 5 tecken t.ex. 09E2g
+# Should add grid size 25 here as well, possibly also RUBIN coordinates.
+# Determine grid size from length of input?
+# x: indexruta, längd 5 tecken t.ex. 09E2g
 
 #' @export
 index_rt90 <- function(grid, .grid_size = 5000) {
 
-	nstor <- as.numeric(substr(grid, 1, 2))
-	estor <- substr(grid, 3, 3)
+	n_stor <- as.numeric(substr(grid, 1, 2))
+	e_stor <- substr(grid, 3, 3)
 
 	# Northing: X = (storrutaX * 50000) + 6100000 + (5000 * bladX)
 	# Easting: y = ((storrutaYs position i alfabetet - 1) * 50000) + 1200000 + (5000 * (bladYs position i alfabetet -1))
 
 	if (.grid_size == 5000) {
-	  nekon <- as.numeric(substr(grid, 4, 4))
+	  n_ekon <- as.numeric(substr(grid, 4, 4))
 	  # eekon must be supplied as lower case
-	  eekon <- tolower(substr(grid, 5, 5))
+	  e_ekon <- tolower(substr(grid, 5, 5))
+	  n_coord <- ((n_stor - 1) * 50000) + (n_ekon * 5000) + 6100000
+	  e_coord <- as.numeric(
+	    (((gtools::asc(e_stor) - 64) - 1) * 50000) +
+	      (((gtools::asc(e_ekon) - 96) - 1) * 5000) + 1200000
+	  )
 
-		out <- data.frame(
-			northing = ((nstor - 1) * 50000) + (nekon * 5000) + 6100000,
-			easting = as.numeric((((gtools::asc(estor) - 64) - 1) * 50000) +
-			                       (((gtools::asc(eekon) - 96) - 1) * 5000) + 1200000)
-		)
 	} else if (.grid_size == 50000) {
-		out <- data.frame(
-			northing = ((nstor - 1) * 50000) + 6100000,
-			easting = (((gtools::asc(estor) - 64) - 1) * 50000) + 1200000
-		)
+	  n_coord <- ((n_stor - 1) * 50000) + 6100000
+	  e_coord <- (((gtools::asc(e_stor) - 64) - 1) * 50000) + 1200000
 	}
-	return(out)
+
+	data.frame(
+	  northing = n_coord,
+	  easting = e_coord)
 }

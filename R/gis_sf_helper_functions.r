@@ -198,13 +198,25 @@ copy_layer_arc <- function(
 
 #' @export
 set_epsg_gpkg <- function(dsn, layer, epsg = 3006, delete_srid = NULL) {
-	gdalUtils::ogrinfo(dsn, dialect = "sqlite", sql = glue::glue("SELECT gpkgInsertEpsgSRID({epsg})"))
-	gdalUtils::ogrinfo(dsn, dialect = "sqlite", sql = glue::glue("UPDATE gpkg_geometry_columns SET srs_id = {epsg} WHERE table_name LIKE '{layer}%';"))
-	gdalUtils::ogrinfo(dsn, dialect = "sqlite", sql = glue::glue("UPDATE gpkg_contents SET srs_id = {epsg} WHERE table_name LIKE '{layer}%';"))
-	if (!is.null(delete_srid)) {
-		# Delete SRSID posts created "by" st_write [or rather GDAL]
-		gdalUtils::ogrinfo(dsn, dialect = "sqlite", sql = glue::glue("DELETE FROM gpkg_spatial_ref_sys WHERE srs_id LIKE {delete_srid}%;"))
-	}
+  gdalUtils::ogrinfo(
+    dsn, dialect = "sqlite",
+    sql = glue::glue("SELECT gpkgInsertEpsgSRID({epsg})")
+  )
+
+  gdalUtils::ogrinfo(
+    dsn, dialect = "sqlite",
+    sql = glue::glue("UPDATE gpkg_geometry_columns SET srs_id = {epsg} WHERE table_name LIKE '{layer}%';")
+  )
+
+  gdalUtils::ogrinfo(
+    dsn, dialect = "sqlite",
+    sql = glue::glue("UPDATE gpkg_contents SET srs_id = {epsg} WHERE table_name LIKE '{layer}%';")
+  )
+
+  if (!is.null(delete_srid)) {
+    # Delete SRSID posts created "by" st_write [or rather GDAL]
+    gdalUtils::ogrinfo(dsn, dialect = "sqlite", sql = glue::glue("DELETE FROM gpkg_spatial_ref_sys WHERE srs_id LIKE {delete_srid}%;"))
+  }
 }
 
 #' @export

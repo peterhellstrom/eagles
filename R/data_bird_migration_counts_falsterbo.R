@@ -1,4 +1,11 @@
+#' Title
+#'
+#' @param month
+#'
+#' @return
 #' @export
+#'
+#' @examples
 month_switch <- function(month) {
   sapply(
     month, switch,
@@ -22,7 +29,7 @@ reshape_species_year <- function(x) {
   names_x <- names(x)
   names(x) <- c(names(x)[[1]], "count")
 
-  x <- x |>
+  x |>
     dplyr::mutate(month = names_x[[1]]) |>
     dplyr::relocate(month) |>
     dplyr::rename(day = names_x[1]) |>
@@ -30,8 +37,9 @@ reshape_species_year <- function(x) {
       day = strtoi(day),
       count = dplyr::na_if(count, "-"),
       count = stringr::str_replace_all(count, "\\s+", ""),
-      count = strtoi(count))
-  x
+      count = strtoi(count)
+    )
+
 }
 
 #' @export
@@ -47,7 +55,9 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
     rvest::html_table()
 
   x_counts <- purrr::map_dfr(x, reshape_species_year) |>
-    dplyr::mutate(species = species, year = year) |>
+    dplyr::mutate(
+      species = species, year = year
+    ) |>
     dplyr::relocate(species, year)
 
   if (convert_date) {
@@ -55,7 +65,8 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
       dplyr::mutate(
         month = month_switch(month),
         date = stringr::str_c(year, month, day, sep = "-"),
-        date = lubridate::ymd(date)) |>
+        date = lubridate::ymd(date)
+      ) |>
       dplyr::relocate(date, .before = count)
   }
 
@@ -82,7 +93,9 @@ falsterbo_species_all_years <- function(species, replace_na = TRUE) {
     x, \(x) x |>
       dplyr::mutate(
         Summa = stringr::str_replace_all(Summa, "\\s+", ""),
-        Summa = strtoi(Summa)))
+        Summa = strtoi(Summa)
+      )
+  )
 
   x <- x |>
     dplyr::bind_rows() |>
@@ -93,7 +106,9 @@ falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 
   if (replace_na) {
     x <- x |>
-      dplyr::mutate(count = tidyr::replace_na(count, 0))
+      dplyr::mutate(
+        count = tidyr::replace_na(count, 0)
+      )
   }
   x
 }

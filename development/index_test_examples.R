@@ -70,47 +70,6 @@ places |>
   )
   )}()
 
-add_index_1 <- function(
-    .data,
-    .grid_size,
-    .fn,
-    .prefix = "grid",
-    .suffix = "",
-    .keep = "all",
-    ...) {
-
-  .data |>
-    {(\(.) dplyr::mutate(
-      .,
-      "{.prefix}_{stringr::str_replace(.grid_size / 1000, ',|\\\\.', '_')}{.suffix}" := .fn(., .grid_size = .grid_size, ...),
-      .keep = .keep
-    )
-    )}()
-
-  # dplyr::mutate(
-  #   .data,
-  #   "{.prefix}_{stringr::str_replace(.grid_size / 1000, ',|\\\\.', '_')}{.suffix}" := sweref99_index(.data, .grid_size = .grid_size),
-  #   .keep = .keep
-  # )
-}
-
-add_index <- function(
-    .data,
-    .grid_size,
-    .keep = "none",
-    ...) {
-
-  dplyr::bind_cols(
-    .data,
-    purrr::map(
-      .grid_size,
-      \(.x) .data |>
-        add_index_1(.x, .keep = .keep, ...)
-    ) |>
-      purrr::list_cbind()
-  )
-}
-
 # Do NOT use .data as argument, since it is confused with the .data pronoun !?!?
 .data_ <- places
 .prefix <- "ruta"
@@ -122,7 +81,6 @@ dplyr::mutate(
   "{.prefix}_{stringr::str_replace(.grid_size / 1000, ',|\\\\.', '_')}{.suffix}" := sweref99_index(.data_, .grid_size = .grid_size),
   .keep = "all"
 )
-
 
 places |>
   add_index_1(
@@ -166,7 +124,6 @@ places |>
     .suffix = "_km"
   ) |>
   print(n = Inf)
-
 
 purrr::map_dfr(
   grid_sizes_named,
@@ -221,3 +178,25 @@ rt90_index(data_, .grid_size = 1000)
 rt90_index(data_, .grid_size = 1000, rubin = TRUE)
 rt90_index(data_, rubin = TRUE, rubin_num = 100)
 rt90_index(data_, rubin = TRUE, rubin_num = 1)
+
+# Askö forskningsstation
+# WGS84
+# 58°49'24.1"N 17°38'13.1"E
+# WGS84 DDM
+# 58°49.401'N 17°38.219'E
+# WGS84 decimal (lat, lon)
+# 58.82335, 17.636983
+# RT90 (nord, öst)
+# 6523806, 1605815
+# SWEREF99 TM (nord, öst)
+# 6523381, 652251
+
+map(c(1000, 5000, 50000), \(x) rt90_index(1605815, 6523806, x))
+
+storrutor |> filter(ruta == "9I")
+ekorutor |> filter(ruta == "9I 4b")
+
+purrr::map_chr(
+  c("dm", "dms"),
+  \(x) eagles::coords_rc(58.82335, 17.636983, x)
+)
