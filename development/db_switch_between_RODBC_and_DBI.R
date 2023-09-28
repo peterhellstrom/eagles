@@ -39,3 +39,18 @@ db_odbc_switch <- function(
 
 db_odbc_switch("DBI")
 db_odbc_switch("RODBC")
+
+tmp_db <- function(
+    sql_query,
+    path = "W:/projects/data/raptorbase/RaptorBase_Data.accdb") {
+
+  con <- RODBC::odbcConnectAccess2007(path)
+  out <- RODBC::sqlQuery(con, sql_query, as.is = FALSE) |>
+    tibble::as_tibble()
+  on.exit(close(con))
+  out
+}
+
+s <- c("SELECT * FROM tCoordinates", "SELECT * FROM tMonitoringSeason")
+d <- map(s, \(x) tmp_db(x))
+

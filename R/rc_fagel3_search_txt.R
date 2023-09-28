@@ -89,26 +89,38 @@ rc_ringon_search_txt <- function (
       too_few = "debug") |>
     dplyr::mutate(
       Datum = as.Date(Datum),
-      dplyr::across(tidyselect::where(is.character), \(x) dplyr::na_if(x, "")))
+      dplyr::across(
+        tidyselect::where(is.character), \(x) dplyr::na_if(x, "")
+      )
+    )
 
   ringon_sep <- ringon_tbl |>
     dplyr::select(contents) |>
     tidyr::separate_wider_delim(
       contents, "|",
       names = c(NA, r, NA),
-      too_few = "debug")
+      too_few = "debug"
+    )
 
   sites_sep <- sites_tbl |>
     dplyr::select(contents) |>
     tidyr::separate_wider_delim(
       contents, "|",
       names = c(NA, l, NA),
-      too_few = "debug")
+      too_few = "debug"
+    )
 
   sites_sep <- sites_sep |>
     dplyr::mutate(
-      dplyr::across(Latitud:Longitud, \(x) stringr::str_replace(x, ",", ".") |> as.numeric()),
-      dplyr::across(tidyselect::where(is.character), \(x) dplyr::na_if(x, ""))
+      dplyr::across(
+        Latitud:Longitud,
+        \(x) stringr::str_replace(x, ",", ".") |>
+          as.numeric()
+      ),
+      dplyr::across(
+        tidyselect::where(is.character),
+        \(x) dplyr::na_if(x, "")
+      )
     )
 
   sites_sep <- sites_sep |>

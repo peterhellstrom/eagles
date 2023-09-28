@@ -1,6 +1,8 @@
-parse_ring_rc <- function(
+rc_parse_ring <- function(
     .x, pattern = "[a-zA-Z]+",
-    width = 8, side = "left", pad = " ") {
+    width = 8,
+    side = "left",
+    pad = " ") {
 
   series <- stringr::str_extract(.x, pattern) |>
     stringr::str_trim()
@@ -13,7 +15,8 @@ parse_ring_rc <- function(
       series_sequence,
       width = width,
       side  = side,
-      pad   = pad),
+      pad   = pad
+    ),
     TRUE ~ stringr::str_c(
       series,
       stringr::str_pad(
@@ -31,7 +34,7 @@ parse_ring_rc <- function(
 # parse_ring_rc(c("N5431", "E21003", "9158957", "N543A", "ABX333", "N 2310"))
 
 #' @export
-coords_rc <- function(
+rc_coords <- function(
     latitude,
     longitude,
     outformat = c("dm", "dms"),
@@ -77,6 +80,7 @@ coords_rc <- function(
 # coords_rc(64.110602, 15.46875, "dms")
 # coords_rc(-64.110602, -15.46875, "dms")
 
+# Re-write, use named vector and subsetting instead!
 #' @export
 wtse_fagel_lanskod <- Vectorize(function(x, direction = c("from", "to")) {
 	direction <- match.arg(direction)
@@ -91,7 +95,7 @@ wtse_fagel_lanskod <- Vectorize(function(x, direction = c("from", "to")) {
 
 #' @export
 # Funktion som skapar ringnummer
-gen_rc <- function(series, start, n, rc_format = TRUE) {
+rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
   if (rc_format) {
     sprintf(
       paste0(series, "   %s"),
@@ -105,7 +109,6 @@ gen_rc <- function(series, start, n, rc_format = TRUE) {
   }
 }
 
-
 # gen_rc("X", 0300, 100, TRUE)
 
 # Går också att använda tidyr::full_seq
@@ -113,30 +116,37 @@ gen_rc <- function(series, start, n, rc_format = TRUE) {
 # glue::glue("N{stringr::str_pad(tidyr::full_seq(c(9900, 9925), 1), width = 7, pad = ' ')}")
 
 #' @export
-gen_ring_seq <- function(
+rc_ring_seq <- function(
     letter_start, num_start, num_end,
     width = 4, pad = "0") {
   stringr::str_c(
     letter_start,
-    str_pad(num_start:num_end, width = width, pad = pad)
+    stringr::str_pad(num_start:num_end, width = width, pad = pad)
   )
 }
 
 #' @export
-get_central <- function(.color2, .ring) {
-  .first_pos <- stringr::str_sub({{.ring}}, 1, 1)
+rc_get_central <- function(.color2, .ring) {
+
+  .first_pos <- stringr::str_sub({{ .ring }}, 1, 1)
+
+  # Note: necessary to deal with upper/lower case here!
+  .color2_upper = toupper( {{ .color2 }})
 
   dplyr::case_when(
-    {{.color2}} == "ALU" & {{.first_pos}} == "E" ~ "SFH",
-    {{.color2}} == "ALU" & {{.first_pos}} %in% c("X", "N", "P") ~ "SVS",
-    {{.color2}} %in% c("ALU/RÖD", "ALU/SVART", "RÖD", "RÖD/SVART", "RÖD/ALU") ~ "SFH",
-    {{.color2}} %in% c("ALU/BLÅ", "GRÖN", "SVART") ~ "SVS",
-    {{.color2}} %in% c("BLÅ") ~ "NOS"
+    .color2_upper == "ALU" & .first_pos == "E" ~ "SFH",
+    .color2_upper == "ALU" & .first_pos %in% c("X", "N", "P") ~ "SVS",
+    .color2_upper %in% c("ALU/RÖD", "ALU/SVART", "RÖD", "RÖD/SVART", "RÖD/ALU") ~ "SFH",
+    .color2_upper %in% c("ALU/BLÅ", "GRÖN", "SVART") ~ "SVS",
+    .color2_upper %in% c("BLÅ") ~ "NOS"
   )
 }
 
+# tibble(Ring = c("N   6412", "P   8125"), Color2 = c("grön", "ALU")) |>
+#   mutate(Central = rc_get_central(Color2, Ring))
+
 #' @export
-import_from_fagel3 <- function(
+rc_import_from_ringdb <- function(
     con,
     sql_expr,
     as.is = TRUE,
@@ -145,7 +155,7 @@ import_from_fagel3 <- function(
     clean_names = TRUE,
     ...) {
 
-  x <- RODBC::sqlQuery(con, sql_expr, as.is = TRUE) |>
+  x <- DBI::dbGetQuery(con, sql_expr) |>
     tibble::as_tibble() |>
     # dplyr::mutate(dplyr::across(tidyselect::where(is.character), \(x) na_if(x, "")))
     dplyr::mutate(
@@ -165,9 +175,14 @@ import_from_fagel3 <- function(
   if (clean_ring) {
     if ("Ring" %in% names(x)) {
       x <- x |>
-        # dplyr::mutate(Ring = stringr::str_replace_all(Ring, regex("\\s*"), ""))
+        # dplyr::mutate(
+        #   Ring = stringr::str_replace_all(
+        #     Ring, regex("\\s*"), "")
+        # )
         dplyr::mutate(
-          Ring = stringi::stri_replace_all_charclass(Ring, "\\p{WHITE_SPACE}", "")
+          Ring = stringi::stri_replace_all_charclass(
+            Ring, "\\p{WHITE_SPACE}", ""
+          )
         )
     }
   }
@@ -182,7 +197,7 @@ import_from_fagel3 <- function(
 
 # To do: Add (optional) groups for seconds (and rename function to a more general name)
 #' @export
-parse_province_midpt <- function(
+rc_parse_province_midpt <- function(
     .x,
     pattern = "(?<latd>[0-9]{2})(?<latm>[0-9]{2})(?<lath>[A-Z]{1})(?<lond>[0-9 ]+)(?<lonm>[0-9]{2})(?<lonh>[A-Z]{1})",
     col_names = c("lat_dd", "lon_dd")) {
@@ -231,7 +246,7 @@ parse_province_midpt <- function(
 # E = Ringar
 
 #' @export
-fagel3_redovisn_fil <- function(
+rc_fagel3_report_file <- function(
     mnr = 0658,
     year_filter = 2022,
     .markare = markare,
