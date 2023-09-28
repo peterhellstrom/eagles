@@ -50,6 +50,7 @@ db_connect_to_access <- function(
     pwd = "",
     encoding = "",
     package = c("DBI", "RODBC"),
+    check_connection = TRUE,
     ...)  {
 
   package <- match.arg(package)
@@ -70,16 +71,19 @@ db_connect_to_access <- function(
   )
 
   if (package == "DBI") {
-    con_chk <- con_chk <- DBI::dbCanConnect(
-      odbc::odbc(),
-      .connection_string = db_connect_string,
-      encoding = encoding)
+    if (check_connection) {
+      con_chk <- DBI::dbCanConnect(
+        odbc::odbc(),
+        .connection_string = db_connect_string,
+        encoding = encoding)
 
-    if (!con_chk) {
-      db_connect_string <- db_connect_to_access_string(
-        access_file, uid = uid, pwd = db_pwd_ask(), ...
-      )
+      if (!con_chk) {
+        db_connect_string <- db_connect_to_access_string(
+          access_file, uid = uid, pwd = db_pwd_ask(), ...
+        )
+      }
     }
+
     con <- DBI::dbConnect(
       odbc::odbc(),
       .connection_string = db_connect_string,
@@ -87,18 +91,17 @@ db_connect_to_access <- function(
     )
 
   } else if (package == "RODBC") {
-    con_chk <- suppressWarnings(
+    con <- suppressWarnings(
       RODBC::odbcDriverConnect(db_connect_string))
 
-    if (con_chk == -1) {
+    if (con == -1 & !check_connection) {
       db_connect_string <- db_connect_to_access_string(
         access_file, uid = uid, pwd = db_pwd_ask(), ...
       )
+      con <- RODBC::odbcDriverConnect(
+        db_connect_string
+      )
     }
-
-    con <- RODBC::odbcDriverConnect(
-      db_connect_string
-    )
   }
   con
 }
@@ -116,24 +119,51 @@ db_pwd_ask <- function() {
 
 #' @export
 db_import_access <- function(
-    access_file, sql_expr, ...,
-    package = c("DBI", "RODBC")
+    con,
+    sql_expr,
+    ...,
+    package = c("DBI", "RODBC"),
+    tibble = TRUE,
+    na_value = c("")
+    # na_value = c("", " ", "  ")
 ) {
 
   package <- match.arg(package)
 
+  if (class(con) == "character") {
+    con <- db_connect_to_access(con, ..., package = package)
+    input <- "file_path"
+  } else {
+    input <- "connection"
+  }
+
   if(package == "RODBC") {
-    con <- RODBC::odbcConnectAccess2007(access_file)
-    on.exit(close(con))
-    RODBC::sqlQuery(
+    if (input == "file_path") on.exit(close(con))
+    res <- RODBC::sqlQuery(
       con, sql_expr,
-      stringsAsFactors = FALSE, as.is = TRUE, ...
+      stringsAsFactors = FALSE, as.is = TRUE
     )
   } else if(package == "DBI") {
-    con <- DBI::dbConnect(access_file)
-    on.exit(DBI::dbDisconnect(con))
-    DBI::dbGetQuery(con, sql_expr, ...)
+    if (input == "file_path") on.exit(DBI::dbDisconnect(con))
+    res <- DBI::dbGetQuery(con, sql_expr)
   }
+
+  if (tibble) {
+    res <- res |>
+      tibble::as_tibble()
+  }
+
+  if (!is.null(na_value)) {
+    res <- res |>
+      dplyr::mutate(
+        dplyr::across(
+          tidyselect::where(is.character),
+          # \(x) dplyr::if_else(x %in% na_value, NA_character_, x)
+          \(x) dplyr::na_if(x, na_value)
+        )
+      )
+  }
+  res
 }
 
 #' @export

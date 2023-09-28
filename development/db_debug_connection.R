@@ -1,6 +1,8 @@
 library(tidyverse)
 library(eagles)
 
+# Connect to open and password-protected Access db with DBI and RODBC ----
+
 db_debug_connection <- function(access_file, package, ...) {
 
   con <- db_connect_to_access(access_file, package = package, ...)
@@ -34,3 +36,44 @@ test_open <- pmap(
 
 glimpse(test_secret)
 glimpse(test_open)
+
+# Import data; use file path or existing connection ----
+
+data_dir <- "W:/projects/data/ringing/data"
+data_file <- "RingDb0392.mdb"
+package <- "DBI"
+
+## Use a file path as input ----
+ringdb <- file.path(data_dir, data_file)
+
+system.time(
+  ringon <- db_import_access(
+    ringdb,
+    "SELECT * FROM Ringon",
+    package = "DBI"
+  )
+)
+
+## Use an existing database connection ----
+ringdb <- db_connect_to_access(
+  file.path(data_dir, data_file),
+  package = package
+)
+
+system.time(
+  ringon <- db_import_access(
+    ringdb,
+    "SELECT * FROM Ringon",
+    package = package
+  )
+)
+
+## Close connections ----
+if (package == "RODBC") {
+  RODBC::odbcClose(ringdb)
+} else if(package == "DBI") {
+  DBI::dbDisconnect(ringdb)
+}
+
+# Frequent error message?:
+# "closing unused RODBC handle "

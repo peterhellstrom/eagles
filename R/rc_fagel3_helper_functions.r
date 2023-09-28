@@ -31,7 +31,7 @@ rc_parse_ring <- function(
   r_rc
 }
 
-# parse_ring_rc(c("N5431", "E21003", "9158957", "N543A", "ABX333", "N 2310"))
+# rc_parse_ring(c("N5431", "E21003", "9158957", "N543A", "ABX333", "N 2310"))
 
 #' @export
 rc_coords <- function(
@@ -76,22 +76,31 @@ rc_coords <- function(
 
 }
 
-# coords_rc(64.110602, 15.46875, "dm")
-# coords_rc(64.110602, 15.46875, "dms")
-# coords_rc(-64.110602, -15.46875, "dms")
+# rc_coords(64.110602, 15.46875, "dm")
+# rc_coords(64.110602, 15.46875, "dms")
+# rc_coords(-64.110602, -15.46875, "dms")
 
-# Re-write, use named vector and subsetting instead!
 #' @export
-wtse_fagel_lanskod <- Vectorize(function(x, direction = c("from", "to")) {
-	direction <- match.arg(direction)
-	if (direction == "from") {
-		switch(as.character(x), "1" = "AC", "2" = "BD", "3" = "M", "4" = "O", "B" = "AB", x)
-	} else if (direction == "to") {
-		switch(as.character(x), "AC" = "1", "BD" = "2", "M" = "3", "O" = "4", "AB" = "B", x)
-	}
-}, "x")
+rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
 
-# wtse_fagel_lanskod(c("AC", "BD", "Z", "NO"), direction = "to")
+  direction <- match.arg(direction)
+
+  lan_to_fagel3 <- c(
+    "AC" = "1", "BD" = "2", "M"= "3", "O" = "4", "AB" = "B",
+    "C" = "C", "D" = "D", "E" = "E", "F" = "F", "G" = "G",
+    "H" = "H", "I" = "I", "K" = "K", "N" = "N", "S" = "S",
+    "T" = "T", "U" = "U", "W" = "W", "X" = "X", "Y" = "Y", "Z" = "Z")
+
+  if (direction == "to") {
+    as.character(lan_to_fagel3[x])
+  } else if (direction == "from") {
+    fagel3_to_lan <- setNames(names(lan_to_fagel3), lan_to_fagel3)
+    as.character(fagel3_to_lan[x])
+  }
+}
+
+# rc_fagel3_county_code(c("AC", "BD", "G", "AB", "NY"), "to")
+# rc_fagel3_county_code(c("1", "2", "3", "4", "B", "C", "Å"), "from")
 
 #' @export
 # Funktion som skapar ringnummer
@@ -109,7 +118,7 @@ rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
   }
 }
 
-# gen_rc("X", 0300, 100, TRUE)
+# rc_ring_seq_sprintf("X", 0300, 100, TRUE)
 
 # Går också att använda tidyr::full_seq
 # stringr::str_c("N", stringr::str_pad(tidyr::full_seq(c(9900, 9925), 1), width = 7, pad = " "))
@@ -146,24 +155,19 @@ rc_get_central <- function(.color2, .ring) {
 #   mutate(Central = rc_get_central(Color2, Ring))
 
 #' @export
-rc_import_from_ringdb <- function(
-    con,
+rc_import_from_db <- function(
+    access_file,
     sql_expr,
-    as.is = TRUE,
-    na_vec = c("", " ", "  "),
     clean_ring = FALSE,
     clean_names = TRUE,
+    package = c("DBI", "RODBC"),
     ...) {
 
-  x <- DBI::dbGetQuery(con, sql_expr) |>
-    tibble::as_tibble() |>
-    # dplyr::mutate(dplyr::across(tidyselect::where(is.character), \(x) na_if(x, "")))
-    dplyr::mutate(
-      dplyr::across(
-        tidyselect::where(is.character),
-        \(x) dplyr::if_else(x %in% na_vec, NA_character_, x)
-      )
-    )
+  package <- match.arg(package)
+
+  x <- db_import_access(
+    access_file, sql_expr, ..., package = package
+  )
 
   if ("Datum" %in% names(x)) {
     x <- x |>
@@ -189,7 +193,7 @@ rc_import_from_ringdb <- function(
 
   if (clean_names) {
     x <- x |>
-      janitor::clean_names(...)
+      janitor::clean_names()
   }
 
   x
