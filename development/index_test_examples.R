@@ -198,5 +198,5 @@ ekorutor |> filter(ruta == "9I 4b")
 
 purrr::map_chr(
   c("dm", "dms"),
-  \(x) eagles::coords_rc(58.82335, 17.636983, x)
+  \(x) eagles::rc_coords(58.82335, 17.636983, x)
 )

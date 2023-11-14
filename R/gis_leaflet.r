@@ -16,9 +16,12 @@ leaflet_crs_3006 <- function() {
     code = "EPSG:3006",
     proj4def = "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
     #resolutions = 2^(12:-1), # 4096 down to 0.5
-    resolutions = c(4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0.5,
-                    0.25, 0.15, 0.1, 0.05, 0.01),
-    origin = c(-1200000.000000, 8500000.000000))
+    resolutions = c(
+      4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0.5,
+      0.25, 0.15, 0.1, 0.05, 0.01
+    ),
+    origin = c(-1200000, 8500000)
+  )
 }
 
 #' @export
@@ -302,33 +305,45 @@ lm_basemaps_add_extras <- function(map) {
     leafem::addMouseCoordinates(
       epsg = 3006,
       proj4string = "+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
-      native.crs = TRUE) |>
+      native.crs = TRUE
+    ) |>
     #mapview::addMouseCoordinates(style = "detailed") |>
     leaflet.extras::addControlGPS(
       options = leaflet.extras::gpsOptions(
         activate = FALSE,
         autoCenter = TRUE,
-        maxZoom = 12)) |>
+        maxZoom = 12)
+    ) |>
     leaflet::addScaleBar(
       position = "bottomleft",
-      options = scaleBarOptions(metric = TRUE, imperial = FALSE)) |>
+      options = scaleBarOptions(metric = TRUE, imperial = FALSE)
+    ) |>
     leaflet::addMeasure(
       position = "topleft",
       primaryLengthUnit = "meters",
       secondaryLengthUnit = "kilometers",
       primaryAreaUnit = "sqmeters",
-      secondaryAreaUnit = "hectares") |>
-    leaflet.extras::addFullscreenControl()
-  # leaflet::addMiniMap(tiles = "https://karta.raa.se/lmtopowebb/1.0.0/topowebb_nedtonad/default/3006/{z}/{y}/{x}.png",
-  #            toggleDisplay = TRUE,
-  #            minimized = TRUE) |>
-  #addEasyButton(easyButton(
-  #icon="fa-crosshairs", title="Locate Me",
-  #onClick=JS("function(btn, map){ map.locate({setView: true}); }"))) |>
+      secondaryAreaUnit = "hectares"
+    ) |>
+    leaflet.extras::addFullscreenControl() |>
+    leaflet::addMiniMap(
+      tiles = "https://karta.raa.se/lmtopowebb/1.0.0/topowebb_nedtonad/default/3006/{z}/{y}/{x}.png",
+      toggleDisplay = TRUE,
+      minimized = TRUE
+    ) |>
+    leaflet::addEasyButton(
+      leaflet::easyButton(
+        icon = "fa-crosshairs",
+        title = "Locate Me",
+        onClick = leaflet::JS("function(btn, map){ map.locate({setView: true}); }")
+      )
+    )
 }
 
 #' @export
-remove_na <- function(x) x[!is.na(x)]
+remove_na <- function(x) {
+  x[!is.na(x)]
+}
 
 #' @export
 options_sublist <- function(x, y = c("service", "group", "urlTemplate")) {
@@ -341,7 +356,8 @@ tms_sources <- function(
     layers_sheet = "tms") {
 
   .data <- readxl::read_excel(
-    path = path, sheet = layers_sheet)
+    path = path, sheet = layers_sheet
+  )
 
   .data |>
     purrr::transpose() |>
@@ -358,7 +374,9 @@ swe_tiles <- function(
     zoom = 4) {
 
   m <- leaflet::leaflet() |>
-    leaflet::setView(lng = lng, lat = lat, zoom = zoom)
+    leaflet::setView(
+      lng = lng, lat = lat, zoom = zoom
+    )
 
   for (i in seq_along(tile_providers)) {
     m <- m |>
@@ -374,7 +392,8 @@ swe_tiles <- function(
       position = 'bottomright',
       baseGroups = base::sapply(tile_providers, "[[", "group"),
       #baseGroups = purrr::map_chr(tile_providers, ~.x$group)
-      options = leaflet::layersControlOptions(collapsed = FALSE)) |>
+      options = leaflet::layersControlOptions(collapsed = FALSE)
+    ) |>
     leafem::addMouseCoordinates()
 
   m

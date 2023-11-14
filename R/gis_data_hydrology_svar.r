@@ -12,7 +12,7 @@
 # angivet AROID.
 
 #' @export
-daro_flode <- function(aroid, direction = c("down", "up")) {
+daro_flode <- function(aroid, direction = c("down", "up"), data = daro) {
 
   direction <- match.arg(direction)
 
@@ -22,20 +22,23 @@ daro_flode <- function(aroid, direction = c("down", "up")) {
 
   if (direction == "down") {
     while (!rlang::is_empty(aroid)) {
-      aroid <- daro_d[daro_d$"AROID" == aroid,]$OMRID_NED
+      aroid <- data[data$"AROID" == aroid,]$OMRID_NED
       i <- i + 1
       out[[i]] <- aroid }
     # Remove final AROID, since this is (always) in the sea
-    head(unlist(out), -1)
+    inds <- head(unlist(out), -1)
+    daro_flode_sf(data, inds, add_flow_id = TRUE)
+    #data[data$"AROID" %in% inds,]
   }
 
   else if (direction == "up") {
     while (!rlang::is_empty(aroid)) {
-      aroid <- daro_d[daro_d$"OMRID_NED" %in% aroid,]$AROID
+      aroid <- data[data$"OMRID_NED" %in% aroid,]$AROID
       i <- i + 1
       out[[i]] <- aroid }
 
-    unlist(out)
+    inds <- unlist(out)
+    data[data$"AROID" %in% inds,]
   }
 }
 
@@ -44,11 +47,24 @@ daro_flode <- function(aroid, direction = c("down", "up")) {
 # nu blir den ju lite "missvisande" vid sökning uppströms.
 
 #' @export
-daro_flode_sf <- function(.x) {
-  daro |>
-    dplyr::slice(base::match(.x, daro |>  dplyr::pull(AROID))) |>
-    dplyr::mutate(FLODEID = dplyr::row_number()) |>
-    dplyr::relocate(FLODEID)
+daro_flode_sf <- function(data, index, add_flow_id = FALSE) {
+
+  out <- data |>
+    dplyr::slice(
+      base::match(
+        index,
+        data |> dplyr::pull(AROID)
+      )
+    )
+
+  if (add_flow_id) {
+    out <- out |>
+      dplyr::mutate(
+        FLODEID = dplyr::row_number()
+      ) |>
+      dplyr::relocate(FLODEID)
+  }
+  out
 }
 
 # Gruppera avrinningsområden, baserat på attribut ----
@@ -57,14 +73,16 @@ daro_flode_sf <- function(.x) {
 # (jmf med skiktet SVARO i SMHI i Svenskt Vattenarkiv), eftersom de
 # överlappande polygonerna är tillgängliga i just SVARO.
 #' @export
-aroid_group <- function(.x) {
+aroid_group <- function(.x, .field) {
 
-  x <- lapply(.x$grans_aroid, daro_flode, direction = "up")
-  names(x) <- .x$grans_aroid
+  x <- map_dfr(
+    .x$aroid |> rlang::set_names(),
+    \(x) daro_flode(x, direction = "up"),
+    .id = "aroid_grp"
+  )
 
-  x <- tibble::enframe(x, name = "grans_aroid", value = "AROID") |>
-    tidyr::unnest(cols = AROID) |>
-    dplyr::inner_join(.x, dplyr::join_by(grans_aroid))
+  x <- x |>
+    inner_join(.x, join_by(aroid_grp == aroid))
 
   x_s <- x |>
     dplyr::group_by(AROID) |>
@@ -77,10 +95,9 @@ aroid_group <- function(.x) {
     dplyr::slice_min(ordn, n = 1) |>
     dplyr::ungroup()
 
-  x_daro <- daro |>
-    dplyr::inner_join(x_s, dplyr::join_by(AROID))
-  # dplyr::group_by(test_name) # group_by renders error message in ms_dissolve
-  x_daro
+  # group_by renders error message in ms_dissolve
+  # dplyr::group_by(test_name)
+  x_s
 }
 
 ## Slå ihop delavriningsområden baserat på fältet namn i attributtabell ----
@@ -89,12 +106,15 @@ aroid_group <- function(.x) {
 # Var tidigare namn, men det funkar ju inte om två olika områden
 # har samma namn, ändrade till grans_aroid
 #' @export
-aroid_group_dissolve <- function(.x, .x_attr, .field = grans_aroid) {
+aroid_group_dissolve <- function(.x, .x_attr, .field = aroid_grp, .attr_field = aroid) {
   .x |>
-    rmapshaper::ms_dissolve(field = .field) |>
-    dplyr::inner_join(.x_attr, join_by({{.field}})) |>
-    dplyr::arrange(grupp, ordn) |>
-    dplyr::mutate(area = sf::st_area(.)) |>
+    dplyr::group_by( {{ .field }}) |>
+    dplyr::summarize() |>
+    dplyr::inner_join(
+       .x_attr, join_by( {{ .field }} == {{ .attr_field }})
+    ) |>
+    # dplyr::arrange(grupp, ordn) |>
+    { \(.) dplyr::mutate(., area = sf::st_area(.)) }() |>
     dplyr::mutate(area = units::set_units(area, km^2))
 }
 

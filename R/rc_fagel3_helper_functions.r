@@ -158,8 +158,9 @@ rc_get_central <- function(.color2, .ring) {
 rc_import_from_db <- function(
     access_file,
     sql_expr,
-    clean_ring = FALSE,
+    clean_spaces = NULL,
     clean_names = TRUE,
+    date_transform = TRUE,
     package = c("DBI", "RODBC"),
     ...) {
 
@@ -169,26 +170,27 @@ rc_import_from_db <- function(
     access_file, sql_expr, ..., package = package
   )
 
-  if ("Datum" %in% names(x)) {
+  if (date_transform) {
     x <- x |>
-      dplyr::mutate(
-        Datum = lubridate::ymd(str_sub(Datum, 1, 10))
+      mutate(
+        across(
+          where(is.POSIXct), \(d) lubridate::ymd(str_sub(d, 1, 10))
+        )
       )
   }
 
-  if (clean_ring) {
-    if ("Ring" %in% names(x)) {
-      x <- x |>
-        # dplyr::mutate(
-        #   Ring = stringr::str_replace_all(
-        #     Ring, regex("\\s*"), "")
-        # )
-        dplyr::mutate(
-          Ring = stringi::stri_replace_all_charclass(
-            Ring, "\\p{WHITE_SPACE}", ""
-          )
+  if (!missing(clean_spaces)) {
+    x <- x |>
+      # dplyr::mutate(
+      #   Ring = stringr::str_replace_all(
+      #     Ring, regex("\\s*"), "")
+      # )
+      dplyr::mutate(
+        across(
+          {{ clean_spaces }},
+          \(col) stringi::stri_replace_all_charclass(col, "\\p{WHITE_SPACE}", "")
         )
-    }
+      )
   }
 
   if (clean_names) {

@@ -1,0 +1,34 @@
+påbörjade förändringar i funktioner
+
+konvertering av lat/lon (dd -> dms, etc.)
+avrundning av koordinater i lat/lon till närmaste grader, minuter, sekunder
+formatering av koordinater i lat/lon (RC format etc)
+hur avrundar fagel3 koordinater (och hur konverterar fagel 3 koordinater).
+Exempel på avrundningar: MAIS (flyginfo), RC, eniro. Olika varianter, inledande nollor eller inte (fast kolumnbredd), lon värden som kan ha tre värden, hur avrundas de?
+precision vid avrundning av koordinater i lat/lon (avrundning till hela sekunder, avrundning till n antal decimaler i olika format dd, dm, dms)
+
+
+Påbörjade filer:
+"W:\projects\data\gis\coordinate_transformation"
+
+Att göra:
+Funktion rc_coords behöver uppdateras
+	"W:\projects\R\eagles\R\gis_coordinates_round_decimal_degrees.r"
+	"W:\projects\R\eagles\R\rc_fagel3_helper_functions.r"
+
+Spatial joins, administrativa enheter
+Finns flera varianter, behöver städas upp!
+eagles::admin_areas_load() och eagles::admin_areas_join() - ska dessa vara kvar eller ersättas av eagles::st_join_n() eller eagles::st_join_n_loop()
+
+
+GENERELLT:
+använda .data som argument i funktioner (när ska prefixet . användas rent generellt)? .data är ett pronoun i tidyverse, kan kanske skapa konflikter eller otydlighet att använda detta som argument.
+Behövs en genomgående standardisering av argumentens namn
+
+sf: olika beteende om magrittr pipe eller native pipe används (geometri kolumn ges inte namnet geom/geometry med base pipe)
+argumentet sf_column_name: st_sf(sf_column_name = "geom")
+Är det st_sf eller st_as_sf som ska användas för att gå från t.ex. st_sfc()
+
+sf:: drivrutinen för gpx har förändrats. Är det "avsiktligt" eller bug? Skapa reprex (förbättra befintligt)?
+
+Paketet mgrs kan ej installeras i R 4.3.x. Kontakta förvaltaren av paketet via github (issue)

@@ -79,7 +79,6 @@ st_filter = function(.x, .y, .pred = st_intersects) {
   dplyr::filter(.x, lengths(.pred(.x, .y)) > 0)
 }
 
-
 # purrr::reduce does not work with sf-objects, need to drop geometry
 # https://github.com/r-spatial/sf/issues/798
 
@@ -115,6 +114,17 @@ st_join_n_loop <- function(.data, .join_data) {
     .data <- .data |> sf::st_join(.join_data[[i]])
   }
   .data
+}
+
+#' @export
+count_points_in_polygons <- function(
+    polygons,
+    points,
+    fn = st_contains,
+    name = "n_total"
+) {
+  polygons[points, ] |>
+    {\(.) mutate(., {{ name }} := lengths(fn(., points)))}()
 }
 
 #' @export

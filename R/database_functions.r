@@ -94,7 +94,7 @@ db_connect_to_access <- function(
     con <- suppressWarnings(
       RODBC::odbcDriverConnect(db_connect_string))
 
-    if (con == -1 & !check_connection) {
+    if (con == -1 | !check_connection) {
       db_connect_string <- db_connect_to_access_string(
         access_file, uid = uid, pwd = db_pwd_ask(), ...
       )
@@ -124,8 +124,7 @@ db_import_access <- function(
     ...,
     package = c("DBI", "RODBC"),
     tibble = TRUE,
-    na_value = c("")
-    # na_value = c("", " ", "  ")
+    na_value = c("", " ", "  ")
 ) {
 
   package <- match.arg(package)
@@ -158,8 +157,8 @@ db_import_access <- function(
       dplyr::mutate(
         dplyr::across(
           tidyselect::where(is.character),
-          # \(x) dplyr::if_else(x %in% na_value, NA_character_, x)
-          \(x) dplyr::na_if(x, na_value)
+          \(x) dplyr::if_else(x %in% na_value, NA_character_, x)
+          # \(x) dplyr::na_if(x, na_value)
         )
       )
   }
@@ -172,17 +171,21 @@ db_import_access <- function(
 db_import_access_n <- function(
     fls,
     sql_expr,
-    fn = db_import_access,
-    ...) {
+    ...,
+	source_column = "source",
+    source_names = basename(fls),
+    na_value = c("", " ", "  ")) {
   purrr::map(
-    fls |> rlang::set_names(basename(fls)),
-    \(x) fn(x, sql_expr, ...)
+    fls |> rlang::set_names(source_names),
+    \(x) db_import_access(x, sql_expr, ..., tibble = FALSE, na_value = NULL)
   ) |>
-    purrr::list_rbind(names_to = "source") |>
+    purrr::list_rbind(names_to = source_column) |>
     tibble::as_tibble() |>
     dplyr::mutate(
       dplyr::across(
-        tidyselect::where(is.character), \(x) dplyr::na_if(x, "")
+        tidyselect::where(is.character),
+        # \(x) dplyr::na_if(x, "")
+        \(x) dplyr::if_else(x %in% na_value, NA_character_, x)
       )
     )
 }

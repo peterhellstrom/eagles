@@ -2,7 +2,7 @@ library(tidyverse)
 library(sf)
 library(eagles)
 
-coords_rc <- function(
+rc_coords <- function(
     latitude,
     longitude,
     outformat = c("dm", "dms"),
@@ -53,41 +53,41 @@ coords_rc <- function(
     dplyr::pull(lat_lon_round)
 }
 
-coords_rc(64.110602, 15.46875, "dm")
-coords_rc(64.110602, 15.46875, "dms")
-coords_rc(64.110602, 15.46875, "dm", FALSE)
-coords_rc(64.110602, 15.46875, "dm")
-coords_rc(50.110602, -15.46875, "dm")
-coords_rc(50.110602, -152.46875, "dm", FALSE)
-coords_rc(50.110602, -152.46875, "dms", FALSE)
-coords_rc(-50.110602, 150.46875, "dm", FALSE)
-coords_rc(-50.110602, 150.46875, "dm")
+rc_coords(64.110602, 15.46875, "dm")
+rc_coords(64.110602, 15.46875, "dms")
+rc_coords(64.110602, 15.46875, "dm", FALSE)
+rc_coords(64.110602, 15.46875, "dm")
+rc_coords(50.110602, -15.46875, "dm")
+rc_coords(50.110602, -152.46875, "dm", FALSE)
+rc_coords(50.110602, -152.46875, "dms", FALSE)
+rc_coords(-50.110602, 150.46875, "dm", FALSE)
+rc_coords(-50.110602, 150.46875, "dm")
 
 # Many
-coords_rc(
+rc_coords(
   c(64.110602, 67.496745, -12.1234),
   c(15.46875, 18.28125, 125.2345),
   "dm")
 
-coords_rc(
+rc_coords(
   c(64.110602, 67.496745, -12.1234),
   c(15.46875, 18.28125, 125.2345),
   "dms")
 
-coords_rc(
+rc_coords(
   c(64.110602, 67.496745, -12.1234),
   c(15.46875, 18.28125, 125.2345),
   "dm", pad_right = FALSE)
 
 # outformat as vector? NO! Not yet...
-coords_rc(
+rc_coords(
   rep(64.110602, 2),
   rep(15.46875, 2),
   c("dm", "dms"))
 
 # Rounding "spill-over" effects from seconds to minutes?
-coords_rc(60.549853, 17.175407, "dm")
-coords_rc(60.549853, 17.175407, "dms") # 603259N 171031E
+rc_coords(60.549853, 17.175407, "dm")
+rc_coords(60.549853, 17.175407, "dms") # 603259N 171031E
 
 # Developer's case
 latitude <- c(64.110602, 67.496745, 65.25, -42.89)
@@ -135,17 +135,9 @@ str_pad("1152", side = "right", pad = " ", width = 6)
 # case_dms
 # do nothing
 
-
-
-
-
-
-
-
 str_pad("115223", side = "both", pad = " ", width = 7)
 str_pad("2115223", side = "both", pad = " ", width = 7)
 
 str_pad("1528", side = "both", pad = " ", width = 7)
 str_pad("152812", side = "both", pad = " ", width = 7)
 str_pad("1528", side = "left", pad = " ", width = 5)
-

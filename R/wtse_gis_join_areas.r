@@ -1,3 +1,6 @@
+# Note that the admin_areas_load() and admin_areas_join() functions
+# have been generalized in st_join_n() and st_join_n_loop().
+
 #' @export
 admin_areas_load <- function(
     db = "E:/Maps/Naturvard/Naturvard.gpkg",
@@ -19,51 +22,62 @@ admin_areas_load <- function(
     )
 ) {
 
-  walk2(.x = import_to_sf,
-        .y = layer,
-        .f = ~ assign(
-          .x,
-          sf::st_read(dsn = db, layer = .y, quiet = TRUE),
-          envir = .GlobalEnv)
+  walk2(
+    import_to_sf,
+    layer,
+    \(x, y) assign(
+      x,
+      # sf::st_read(dsn = db, layer = y, quiet = TRUE),
+      sf::read_sf(dsn = db, layer = y),
+      envir = .GlobalEnv
+    )
   )
 }
 
 #' @export
 admin_areas_join <- function(
     .x,
-    lan,
-    kommun,
-    distrikt,
-    rapportomrade,
+    lan = lan,
+    kommun = kommun,
+    distrikt = distrikt,
+    rapportomrade = rapportomrade,
     id = FALSE) {
   if(!id) {
     xy_join <- .x |>
       sf::st_join(
-        lan |> dplyr::select(Lan = lanbok)) |>
+        lan |> dplyr::select(Lan = lanbok)
+      ) |>
       sf::st_join(
-        kommun |> dplyr::select(Kommun = kommunnamn)) |>
+        kommun |> dplyr::select(Kommun = kommunnamn)
+      ) |>
       sf::st_join(
         distrikt |>
           dplyr::select(
             Landskap = landskapbok,
-            Distrikt = distriktsnamn)) |>
+            Distrikt = distriktsnamn)
+      ) |>
       # sf::st_join(landskap_ap |>
       #           dplyr::select(Landskap_AP = area_name)) |>
       sf::st_join(
-        rapportomrade |> dplyr::select(Rapportomrade = area_name))
+        rapportomrade |> dplyr::select(Rapportomrade = area_name)
+      )
   } else {
     xy_join <- .x |>
       sf::st_join(
-        lan |> dplyr::select(LanID = lankod)) |>
+        lan |> dplyr::select(LanID = lankod)
+      ) |>
       sf::st_join(
-        kommun |> dplyr::select(KommunID = kommunkod)) |>
+        kommun |> dplyr::select(KommunID = kommunkod)
+      ) |>
       sf::st_join(
         distrikt |>
           dplyr::select(
             LandskapID = landskapskod,
-            DistriktID = distriktskod)) |>
+            DistriktID = distriktskod)
+      ) |>
       sf::st_join(
-        rapportomrade |> dplyr::select(RapportomradeID = area_id))
+        rapportomrade |> dplyr::select(RapportomradeID = area_id)
+      )
   }
   xy_join
 }
