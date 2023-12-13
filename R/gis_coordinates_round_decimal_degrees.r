@@ -18,11 +18,23 @@ round_dd <- function(
     tst <- mins < 60
     mins <- dplyr::if_else(tst, mins, 0)
     deg <- dplyr::if_else(tst, deg, deg + 1)
-    deg <- dplyr::case_when(abs(deg) < 10 ~ stringr::str_pad(deg, width = 2, pad = 0))
-    glue::glue(
-      "{deg}{stringr::str_pad(mins, width = 2, pad = 0)}"
+
+    # deg <- dplyr::case_when(
+    #   abs(deg) < 10 ~ stringr::str_pad(deg, width = 2, pad = 0),
+    #   TRUE ~ as.character(deg)
+    # )
+    #
+    # glue::glue(
+    #   "{deg}{stringr::str_pad(mins, width = 2, pad = 0)}"
+    # )
+
+    stringr::str_c(
+      stringr::str_pad(deg, width = 2, pad = 0),
+      stringr::str_pad(mins, width = 2, pad = 0)
     )
+
   } else if (outformat == "dms") {
+
     sec <- round(sec, digits)
 
     tst <- abs(sec - 60) > sqrt(.Machine$double.eps)
@@ -31,9 +43,17 @@ round_dd <- function(
     tst <- mins < 60
     mins <- dplyr::if_else(tst, mins, 0)
     deg <- dplyr::if_else(tst, deg, deg + 1)
-    glue::glue(
-      "{deg}{stringr::str_pad(as.integer(mins), width = 2, pad = 0)}{stringr::str_pad(as.integer(sec), width = 2, pad = 0)}"
+
+    # glue::glue(
+    #   "{deg}{stringr::str_pad(as.integer(mins), width = 2, pad = 0)}{stringr::str_pad(as.integer(sec), width = 2, pad = 0)}"
+    # )
+
+    stringr::str_c(
+      stringr::str_pad(deg, width = 2, pad = 0),
+      stringr::str_pad(as.integer(mins), width = 2, pad = 0),
+      stringr::str_pad(as.integer(sec), width = 2, pad = 0)
     )
+
   }
 }
 # This function does not currently deal well with negative decimal degrees.

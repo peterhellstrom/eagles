@@ -1,3 +1,4 @@
+#' @export
 rc_parse_ring <- function(
     .x, pattern = "[a-zA-Z]+",
     width = 8,
@@ -79,6 +80,17 @@ rc_coords <- function(
 # rc_coords(64.110602, 15.46875, "dm")
 # rc_coords(64.110602, 15.46875, "dms")
 # rc_coords(-64.110602, -15.46875, "dms")
+# Note that this function can not used be directly on columns,
+# Must use map2 or similar (this was not original behaviour, change)
+# tibble(
+#   latitude = c(64.110602, -64.110602),
+#   longitude = c(15.46875, -15.46875),
+# ) |>
+#   mutate(
+#     z = map2_chr(
+#       latitude, longitude, \(y, x) rc_coords(y, x, "dm")
+#     )
+#   )
 
 #' @export
 rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
