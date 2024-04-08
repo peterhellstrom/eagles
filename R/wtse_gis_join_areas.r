@@ -45,10 +45,12 @@ admin_areas_join <- function(
   if(!id) {
     xy_join <- .x |>
       sf::st_join(
-        lan |> dplyr::select(Lan = lanbok)
+        lan |>
+          dplyr::select(Lan = lanbok)
       ) |>
       sf::st_join(
-        kommun |> dplyr::select(Kommun = kommunnamn)
+        kommun |>
+          dplyr::select(Kommun = kommunnamn)
       ) |>
       sf::st_join(
         distrikt |>
@@ -59,15 +61,18 @@ admin_areas_join <- function(
       # sf::st_join(landskap_ap |>
       #           dplyr::select(Landskap_AP = area_name)) |>
       sf::st_join(
-        rapportomrade |> dplyr::select(Rapportomrade = area_name)
+        rapportomrade |>
+          dplyr::select(Rapportomrade = area_name)
       )
   } else {
     xy_join <- .x |>
       sf::st_join(
-        lan |> dplyr::select(LanID = lankod)
+        lan |>
+          dplyr::select(LanID = lankod)
       ) |>
       sf::st_join(
-        kommun |> dplyr::select(KommunID = kommunkod)
+        kommun |>
+          dplyr::select(KommunID = kommunkod)
       ) |>
       sf::st_join(
         distrikt |>
@@ -76,7 +81,8 @@ admin_areas_join <- function(
             DistriktID = distriktskod)
       ) |>
       sf::st_join(
-        rapportomrade |> dplyr::select(RapportomradeID = area_id)
+        rapportomrade |>
+          dplyr::select(RapportomradeID = area_id)
       )
   }
   xy_join
@@ -91,7 +97,9 @@ wtse_join_areas <- function(
     MetodAvstand = 0,
     Metod = st_intersects,
     MetodAndelArea = 1,
-    left = FALSE) {
+    left = FALSE,
+    geometry_field = geom
+  ) {
 
   if (MetodAvstand == 0) {
 
@@ -104,20 +112,21 @@ wtse_join_areas <- function(
       left = left) |>
       dplyr::mutate(
         OmradeTypID = OmradeTypID,
-        Metod = as_label(Metod_str),
+        Metod = dplyr::as_label(Metod_str),
         MetodAvstand = MetodAvstand,
-        MetodAndelArea = MetodAndelArea) |>
+        MetodAndelArea = MetodAndelArea
+      ) |>
       dplyr::group_by(
-        {{.x_group}}
+        {{ .x_group }}
       ) |>
       dplyr::mutate(
         MetodAntalOmraden = n()
       ) |>
       dplyr::select(
-        {{.x_group}},
+        {{ .x_group }},
         OmradeTypID,
-        OmradeID = {{.y_ID}},
-        OmradeNamn = {{.y_NAME}},
+        OmradeID = {{ .y_ID }},
+        OmradeNamn = {{ .y_NAME }},
         Metod,
         MetodAvstand,
         MetodAntalOmraden,
@@ -135,18 +144,16 @@ wtse_join_areas <- function(
       .x |>
         sf::st_buffer(MetodAvstand), .y) |>
       dplyr::mutate(
-        # "Hard coded" geometry column name,
-        # this should be avoided. Not possible to use dot-notation!
-        area = sf::st_area(geometry),
+        area = sf::st_area( {{ geometry_field }} ),
         OmradeTypID = OmradeTypID) |>
       dplyr::group_by(
-        {{.x_group}}
+        {{ .x_group }}
       ) |>
       dplyr::select(
-        {{.x_group}},
+        {{ .x_group }},
         OmradeTypID,
-        OmradeID = {{.y_ID}},
-        OmradeNamn = {{.y_NAME}},
+        OmradeID = {{ .y_ID }},
+        OmradeNamn = {{ .y_NAME }},
         area
       ) |>
       dplyr::arrange(OmradeID) |>

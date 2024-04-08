@@ -95,8 +95,6 @@ wtse_transform <- function(
 # Två varianter: Räkna årsposter, eller från lokal-tabellens Första år
 # OBS! Även ej inventerade revir bör inkluderas
 
-# Needs to be re-written - must use base pipe and avoid dot-notation!
-
 #' @export
 wtse_vars <- function(
     .data,

@@ -1,18 +1,21 @@
 # Egg volume = (0.0373 x Length[mm] x Width[mm]) - 35.3; Stickel et al. (1973)
+# use coalesce here?
 #' @export
-egg_vol <- function(egg_length, egg_width,
-                    vol_type = c("outer", "inner"),
-                    shell_thickness = NULL,
-                    a = 0.0373, b = 35.3) {
+egg_vol <- function(
+    egg_length, egg_width,
+    vol_type = c("outer", "inner"),
+    shell_thickness = NULL,
+    a = 0.0373, b = 35.3
+) {
 
-	vol_type <- match.arg(vol_type)
-	if (vol_type == "outer") {
-		shell_thickness <- 0
-	} else if (vol_type == "inner" && is.null(shell_thickness)) {
-		shell_thickness <- NA
-	}
+  vol_type <- match.arg(vol_type)
+  if (vol_type == "outer") {
+    shell_thickness <- 0
+  } else if (vol_type == "inner" && is.null(shell_thickness)) {
+    shell_thickness <- NA
+  }
 
-	(a * (egg_length - 2*shell_thickness) * (egg_width - 2*shell_thickness)) - b
+  (a * (egg_length - 2*shell_thickness) * (egg_width - 2*shell_thickness)) - b
 }
 #egg_vol(72, 58.85, "outer")
 #egg_vol(72, 58.85, "inner", 0.6)
@@ -52,16 +55,24 @@ egg_embryo_corr <- function(embryo_length, step = 75) {
 # Also, check variable embryo (Yes/No) and embryo.length = the latter should be 0 if embryo is No?
 # What happens when multiplying measured values - or multiply only values where ecf < 1?
 
-# Empirical support for the correction? Check relationship between FPRC and embryo length...
-#curve(ifelse(x>=75, 75*(1/x), 1), from=0, to=160, n=500, ylim=c(0,1), bty="l",
-#	xlab="Embryo length", ylab="Correction factor", font.lab=2, las=1)
-#abline(v=75, lty=2, col="red")
+# Empirical support for the correction?
+# Check relationship between FPRC and embryo length...
+# curve(
+#   ifelse(x >= 75, 75*(1/x), 1),
+#   from = 0, to = 160, n = 500,
+#   ylim = c(0, 1),
+#   bty = "l",
+#   xlab = "Embryo length", ylab = "Correction factor",
+#   font.lab = 2, las = 1
+# )
+# abline(v = 75, lty = 2, col = "red")
 
 # Transform measured values from fresh weight basis to lipid weight basis
 # Ignore specified numeric value (e.g. -99.99), zeros and NAs
+# However, it ignores the situation where FPRC is NA!
 #' @export
-fresh_to_lipid <- function(fw, FPRC, missing = -99.99) {
-  ifelse(!fw %in% missing & !is.na(fw) & fw != 0, 100 * fw / FPRC, fw) }
+fresh_to_lipid <- function(x, FPRC, missing = -99.99) {
+  dplyr::if_else(!x %in% missing & !is.na(x) & x != 0, 100 * x / FPRC, x) }
 
 #lipid_to_fresh <- function(lw, FPRC, missing=-99.99)
 
@@ -123,12 +134,3 @@ sum_below_loq_2 <- function(x, missing = -99.99, na.rm = TRUE) {
 
 #sum_below_loq(x, missing=c(-99.99, -9))
 #sum_below_loq_2(x, missing=c(-99.99, -9))
-
-#' @export
-sum_vars <- function(x, pattern, na.rm = TRUE, fix_loq = TRUE) {
-	z <- x[grep(pattern, names(x))]
-	if (fix_loq) {
-		z <- z %>% mutate_at(vars(1:ncol(z)), funs(fix_below_loq(.)))
-	}
-	rowSums(z, na.rm = na.rm)
-}

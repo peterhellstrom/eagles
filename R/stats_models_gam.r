@@ -35,41 +35,52 @@ gam_predict <- function(m, n_pts_predict = 100, output_format = "long") {
 
   cn <- attr(m$terms , "term.labels")
   m_deriv <- gratia::derivatives(object = m, n = n_pts_predict)
-  p_x <- tibble(m_deriv$data) %>% setNames(cn)
+  p_x <- tibble::tibble(m_deriv$data) |>
+    rlang::set_names(cn)
 
   #p_x <- data.frame(
-  #  seq(min(m$model[,cn]), max(m$model[,cn]), length = n_pts_predict)) %>%
-  #  as_tibble() %>%
-  #  setNames(cn)
+  #  seq(min(m$model[,cn]), max(m$model[,cn]), length = n_pts_predict)) |>
+  #  tibble::as_tibble() |>
+  #  rlang::set_names(cn)
 
-  p <- predict(m, newdata = p_x, type = "response", se.fit = TRUE) %>%
-    as_tibble() %>%
-    setNames(c("predict", "se.predict"))
+  p <- predict(m, newdata = p_x, type = "response", se.fit = TRUE) |>
+    tibble::as_tibble() |>
+    rlang::set_names(c("predict", "se.predict"))
 
   if (nrow(m_deriv) == 0) {
     # For linear models fitted with lm() [i.e. without smoothing term], e.g. y ~ x
     # Included for comparison of linear and gam-estimated trends
     # Plotting this will only work if output_format = "long"
-    p <- bind_cols(p_x, p)
-    p <- p %>%
-      bind_cols(tibble(incr = NA_real_, decr = NA_real_))
+    p <- dplyr::bind_cols(p_x, p)
+    p <- p |>
+      dplyr::bind_cols(
+        tibble::tibble(incr = NA_real_, decr = NA_real_)
+      )
   } else {
     # If a model with smoothing terms, e.g. y ~ s(x) is fitted to the data
-    S_deriv <- signifD(p[["predict"]],
-                       m_deriv$derivative, m_deriv$upper, m_deriv$lower,
-                       eval = 0) %>% as_tibble()
-    p <- bind_cols(p_x, p, S_deriv)
+    S_deriv <- signifD(
+      p[["predict"]],
+      m_deriv$derivative, m_deriv$upper, m_deriv$lower,
+      eval = 0
+    ) |>
+      tibble::as_tibble()
+
+    p <- dplyr::bind_cols(p_x, p, S_deriv)
   }
 
   if (output_format == "long") {
-    p <- p %>%
-      pivot_longer(cols = c(predict, incr:decr),
-                   values_to = "predict", names_to = "variable") %>%
-      arrange(variable, cn) %>%
-      mutate(variable = factor(variable, levels = c("predict", "decr", "incr"))) %>%
-      select(all_of(cn), predict, se.predict, variable)
+    p <- p |>
+      tidyr::pivot_longer(
+        cols = c(predict, incr:decr),
+        values_to = "predict",
+        names_to = "variable") |>
+      dplyr::arrange(variable, cn) |>
+      dplyr::mutate(
+        variable = factor(variable, levels = c("predict", "decr", "incr"))
+      ) |>
+      dplyr::select(all_of(cn), predict, se.predict, variable)
 
-    #p <- p %>% filter(!is.na(value))
+    # p <- p |> dplyr::filter(!is.na(value))
   }
 
   p
@@ -90,7 +101,7 @@ gam_predict <- function(m, n_pts_predict = 100, output_format = "long") {
 
 # ToDo: This approach doesn't work well for grouped data or multiple datasets,
 # due to the need for an already existing object.
-# A more flexible approach is too gall ggplot(data, mapping) + geom_smooth(method = "gam")
+# A more flexible approach is too call ggplot(data, mapping) + geom_smooth(method = "gam")
 # save this plot and work with the saved object, e.g. extract data with ggplot_build().
 # However gratia::derivatives needs a fitted object...
 # gam_predict should perhaps be called in a separate function outside this function,
@@ -100,19 +111,23 @@ gam_predict <- function(m, n_pts_predict = 100, output_format = "long") {
 # function a strict geom function without dependencies.
 
 #' @export
-geom_trend_gam <- function(..., rect.params = list(),
-                fit.params = list(), ci.params = list(),
-                fit.decr.params = list(), fit.incr.params = list(),
-                hline.params = list(), point.params = list(),
-                add_items = c("ci", "fit", "rect", "hline",
-                              "fit.decr", "fit.incr", "point"),
-                object, n_pts_predict = 300) {
+geom_trend_gam <- function(
+    ..., rect.params = list(),
+    fit.params = list(), ci.params = list(),
+    fit.decr.params = list(), fit.incr.params = list(),
+    hline.params = list(), point.params = list(),
+    add_items = c("ci", "fit", "rect", "hline",
+                  "fit.decr", "fit.incr", "point"),
+    object,
+    n_pts_predict = 300
+) {
 
-  p <- gam_predict(m = object, n_pts = n_pts_predict,
-                   output_format = "wide") %>%
-    mutate(
+  p <- gam_predict(
+    m = object, n_pts = n_pts_predict,
+    output_format = "wide") |>
+    dplyr::mutate(
       ymin = predict - 1.96 * se.predict,
-      ymax = predict + 1.96 * se.predict) %>%
+      ymax = predict + 1.96 * se.predict) |>
     as.data.frame()
 
   # se.predict * qt(0.95 / 2 + .5, object$df.residual)
@@ -181,8 +196,8 @@ geom_trend_gam <- function(..., rect.params = list(),
     point.params)
   )
 
-  all_items <-   c("rect", "ci", "hline",
-                   "fit", "fit.decr", "fit.incr", "point")
+  all_items <- c("rect", "ci", "hline",
+                 "fit", "fit.decr", "fit.incr", "point")
 
   if("all" %in% add_items) {
     add_items <- all_items
@@ -203,39 +218,45 @@ gam_fit_trends <- function(data, model) {
 
   # Created nested data and fit model
   # for each item in list-column
-  m_p <- data %>%
-    nest() %>%
-    mutate(m = map(data, {{model}})) %>%
-    mutate(s = map(m, gam_predict)) %>%
-    mutate(glance = map(m, broom::glance)) %>%
-    unnest(glance) %>%
-    mutate(t = map(m, broom::tidy)) %>%
-    unnest(t)
+  m_p <- data |>
+    tidyr::nest() |>
+    dplyr::mutate(
+      m = purrr::map(data, {{ model }} ),
+      s = purrr::map(m, gam_predict),
+      glance = purrr::map(m, broom::glance)
+    ) |>
+    tidyr::unnest(glance) |>
+    dplyr::mutate(
+      t = purrr::map(m, broom::tidy)
+    ) |>
+    tidyr::unnest(t)
 }
 
 # OBS! Endast testad på HELCOM-data!
 # Add call to geom_trend_gam in here instead?
 #' @export
-plot_gam_fit_trends <- function(object, x, y, group, p_value_cutoff,
-                                xlab = NULL, ylab = NULL) {
+plot_gam_fit_trends <- function(
+    object, x, y, group, p_value_cutoff,
+    xlab = NULL, ylab = NULL
+) {
 
-  obs_data <- object %>%
-    unnest(cols = c({{group}}, data))
+  obs_data <- object |>
+    unnest(cols = c( {{ group }} , data))
 
   if (missing(p_value_cutoff)) {
-    pred_data <- object %>%
-      unnest(cols = c({{group}}, s))
+    pred_data <- object |>
+      unnest(cols = c( {{ group }}, s))
   } else {
-    pred_data <- object %>%
-      filter(p.value < p_value_cutoff) %>%
-      unnest(cols = c({{group}}, s))
+    pred_data <- object |>
+      filter(p.value < p_value_cutoff) |>
+      unnest(cols = c( {{ group }} , s))
   }
 
   f_group <- enquo(group)
 
-  p_test <- obs_data %>%
+  p_test <- obs_data |>
     ggplot(
-      aes(x = {{x}}, y = {{y}}, group = {{group}})) +
+      aes(x = {{x}}, y = {{y}}, group = {{ group }} )) +
     geom_line(
       data = pred_data,
       mapping = aes(x = {{x}}, y = predict, group = variable,
