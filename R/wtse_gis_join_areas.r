@@ -34,15 +34,21 @@ admin_areas_load <- function(
   )
 }
 
+# Do not name function arguments the same thing as variables,
+# and vice versa!
+# This will result in the following error
+# Error in dplyr::select(lan, LanID = lankod) :
+# promise already under evaluation: recursive default argument reference or earlier problems?
 #' @export
 admin_areas_join <- function(
     .x,
-    lan = lan,
-    kommun = kommun,
-    distrikt = distrikt,
-    rapportomrade = rapportomrade,
+    lan_sf = lan,
+    kommun_sf = kommun,
+    distrikt_sf = distrikt,
+    rapportomrade_sf = rapportomrade,
     id = FALSE) {
-  if(!id) {
+
+  if (id == FALSE) {
     xy_join <- .x |>
       sf::st_join(
         lan |>
@@ -90,7 +96,8 @@ admin_areas_join <- function(
 
 #' @export
 wtse_join_areas <- function(
-    .x, .y,
+    .x,
+    .y,
     .x_group = LokalID,
     .y_ID, .y_NAME,
     OmradeTypID,
@@ -145,7 +152,8 @@ wtse_join_areas <- function(
         sf::st_buffer(MetodAvstand), .y) |>
       dplyr::mutate(
         area = sf::st_area( {{ geometry_field }} ),
-        OmradeTypID = OmradeTypID) |>
+        OmradeTypID = OmradeTypID
+      ) |>
       dplyr::group_by(
         {{ .x_group }}
       ) |>
