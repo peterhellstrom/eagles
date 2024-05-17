@@ -63,7 +63,12 @@ storrutor |>
   mapview::mapview()
 
 storrutor |>
-  mutate(geometry = map2(easting, northing, \(x, y) grid_cell(x, y, 50000, 50000))) |>
+  mutate(
+    geometry = map2(
+      easting, northing,
+      \(x, y) grid_cell(x, y, 50000, 50000)
+    )
+  ) |>
   st_as_sf(crs = 3021) |>
   mapview::mapview()
 

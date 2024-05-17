@@ -7,11 +7,25 @@
 # Inlandet, syd- och mellan-Sverige = Inl S-M, Region: 2
 # Inlandet, norra Sverige = Inl N, Region: 3
 
-# Vectorised switch function
+# Lookup Subregion, based on given Region and Kommun
+# Kommun is given as kommunkod, NOT kommunnamn
+
 #' @export
-region_switch <- function(.x) {
+region_from_kommun <- function(.region, .kommun) {
+  # Check if Region = 1 (Kust), then proceed to check if Kommun is any of the four in X-county
+  # that divides N Bh and S Bh. If Region is 2, 3, 4, Kommun is not necessary to define subregion
+
+  region_str <- dplyr::case_when(
+    {{ .region }} == 1 ~ dplyr::if_else(
+      stringr::str_detect( {{ .kommun }}, "^21|^12|^24", negate = TRUE),
+      stringr::str_sub( {{ .kommun }}, 1, 2),
+      {{ .kommun }}
+    ),
+    .default = {{ .region }}
+  )
+
   dplyr::case_match(
-    .x,
+    region_str,
     c("05", "08", "09", "10") ~ "S EgÖ",
     c("1233", "1272", "1290", "1291", "1270", "1286", "1264", "1287") ~ "S EgÖ",
     c("01", "04") ~ "N EgÖ",
@@ -25,25 +39,6 @@ region_switch <- function(.x) {
     base::factor(
       levels = c("Vh", "S EgÖ", "N EgÖ", "S Bh", "N Bh", "Bvi", "Inl S-M", "Inl N")
     )
-}
-
-# Lookup Subregion, based on given Region and Kommun
-# Kommun is given as kommunkod, NOT kommunnamn
-
-#' @export
-region_from_kommun <- function(.region, .kommun) {
-  # Check if Region = 1 (Kust), then proceed to check if Kommun is any of the four in X-county
-  # that divides N Bh and S Bh. If Region is 2, 3, 4, Kommun is not necessary to define subregion
-  region_str <- dplyr::case_when(
-    {{ .region }} == 1 ~ dplyr::if_else(
-      stringr::str_detect( {{ .kommun }}, "^21|^12|^24", negate = TRUE),
-      stringr::str_sub( {{ .kommun }}, 1, 2),
-      {{ .kommun }}
-    ),
-    .default = {{ .region }}
-  )
-
-  region_switch(region_str)
 
 }
 

@@ -19,7 +19,8 @@ gpx_to_sf <- function(
 	bearing = FALSE,
   convert_time = TRUE,
   current_time_zone = TRUE,
-	lines = FALSE) {
+	lines = FALSE
+) {
 
 	data_type <- match.arg(data_type)
 
@@ -27,8 +28,10 @@ gpx_to_sf <- function(
 	if (bearing) {
 	  x <- x |>
 	    tidyr::nest() |>
-	    dplyr::mutate(b = purrr::map(data, bearing_df)) |>
-	    tidyr::nest(cols = c(data, b)) |>
+	    dplyr::mutate(
+	      b = purrr::map(data, bearing_df)
+	    ) |>
+	    tidyr::unnest(cols = c(data, b)) |>
 	    sf::st_sf()
 	}
 
@@ -96,35 +99,49 @@ gpx_to_sf <- function(
 }
 
 #' @export
-gps_route_points <- function(.x, quiet = TRUE, crs = 3006) {
+gps_route_points <- function(.x, crs = 3006) {
   gpx_to_sf(
-    st_read(dsn = .x, layer = "route_points", quiet = quiet) %>%
-      group_by(route_fid),
-    lines = FALSE, bearing = TRUE) %>%
-    left_join(
-      st_read(dsn = .x, layer = "routes", quiet = quiet) %>%
-        mutate(route_fid = row_number() - 1) %>%
-        st_drop_geometry() %>%
-        select(route_fid, route_name = name),
-      by = "route_fid") %>%
-    select(route_name, route_fid, time, name:desc, sym, type, bearing:c_dist, geometry) %>%
-    st_transform(crs = crs)
+    sf::read_sf(dsn = .x, layer = "route_points") |>
+      dplyr::group_by(route_fid),
+    lines = FALSE,
+    bearing = TRUE
+  ) |>
+    dplyr::left_join(
+      sf::read_sf(dsn = .x, layer = "routes") |>
+        dplyr::mutate(route_fid = dplyr::row_number() - 1) |>
+        sf::st_drop_geometry() |>
+        dplyr::select(route_fid, route_name = name),
+      dplyr::join_by(route_fid)
+    ) |>
+    dplyr::select(
+      route_name, route_fid, time,
+      name:desc, sym, type,
+      bearing:c_dist, geometry
+    ) |>
+    sf::st_transform(crs = crs)
 }
 
 #' @export
-gps_route_lines <- function(.x, quiet = TRUE, crs = 3006) {
+gps_route_lines <- function(.x, crs = 3006) {
   gpx_to_sf(
-    st_read(dsn = .x, layer = "route_points", quiet = quiet) %>%
-      group_by(route_fid), data_type = "route_points", lines = TRUE) %>%
-    left_join(
-      st_read(dsn = .x, layer = "routes", quiet = quiet) %>%
-        mutate(route_fid = row_number() - 1) %>%
-        st_drop_geometry() %>%
-        select(route_fid, name),
-      by = "route_fid") %>%
-    rename(route_name = name) %>%
-    relocate(route_name, .before = route_fid) %>%
-    st_transform(crs = crs)
+    sf::read_sf(dsn = .x, layer = "route_points") |>
+      dplyr::group_by(route_fid),
+    data_type = "route_points",
+    lines = TRUE
+  ) |>
+    dplyr::left_join(
+      sf::read_sf(dsn = .x, layer = "routes") |>
+        dplyr::mutate(route_fid = dplyr::row_number() - 1) |>
+        sf::st_drop_geometry() |>
+        dplyr::select(route_fid, name),
+      dplyr::join_by(route_fid)
+    ) |>
+    dplyr::rename(route_name = name) |>
+    dplyr::relocate(
+      route_name,
+      .before = route_fid
+    ) |>
+    sf::st_transform(crs = crs)
 }
 
 #' @export
@@ -136,13 +153,13 @@ gps_track_lines <- function(.x, crs = 3006, convert_time = FALSE) {
     lines = TRUE,
     convert_time = convert_time
   ) |>
-    left_join(
+    dplyr::left_join(
       sf::read_sf(dsn = .x, layer = "tracks") |>
-        dplyr::mutate(track_fid = row_number() - 1) |>
+        dplyr::mutate(track_fid = dplyr::row_number() - 1) |>
         sf::st_drop_geometry() |>
         dplyr::select(track_fid, name),
       dplyr::join_by(track_fid)
-    )|>
+    ) |>
     dplyr::rename(track_name = name) |>
     dplyr::relocate(track_name, .before = track_fid) |>
     sf::st_transform(crs = crs)
@@ -164,6 +181,7 @@ bearing_df <- function(x) {
 	colnames(xy) <- c("lon", "lat")
 
 	xy_b <- geosphere::bearing(xy) # geographic
+
 	xy_m <- oce::magneticField(
 	  lon = xy[,"lon"],
 	  lat = xy[,"lat"],
@@ -186,17 +204,17 @@ bearing_df <- function(x) {
 	)
 
 	# Remove last values of each route, i.e. do not bind values not belonging to the same route!
-	#brks <- as.numeric(cumsum(sapply(x[[data_type]], nrow)))
+	# brks <- as.numeric(cumsum(sapply(x[[data_type]], nrow)))
 	# Another alternativ option is:
-	#brks <- which(tail(xy_data$id_field, -1) != head(xy_data$id_field, -1))
-	#xy_data[brks, tail(names(xy_data), 3)] <- NA
+	# brks <- which(tail(xy_data$id_field, -1) != head(xy_data$id_field, -1))
+	# xy_data[brks, tail(names(xy_data), 3)] <- NA
 	xy_data
 }
 
-#x %>% bearing_df()
-#x %>% nest() %>% mutate(b = map(data, bearing_df)) %>% unnest(cols = c(data, b)) %>% st_sf()
-#x %>% ungroup() %>% mutate(z = bearing_df(.))
-#x %>% mutate(z = bearing_df(.))
+# x %>% bearing_df()
+# x %>% nest() %>% mutate(b = map(data, bearing_df)) %>% unnest(cols = c(data, b)) %>% st_sf()
+# x %>% ungroup() %>% mutate(z = bearing_df(.))
+# x %>% mutate(z = bearing_df(.))
 
 # Other options for geodetic calculations:
 # Packages: geosphere, geodist, lwgeom
@@ -206,10 +224,10 @@ bearing_df <- function(x) {
 # Some examples
 # https://gis.stackexchange.com/questions/289608/calculating-distances-between-consecutive-points-using-r
 # ?sf::st_distance
-#geodist::geodist(st_coordinates(x), sequential = TRUE, measure = "haversine")
-#geosphere::distHaversine(st_coordinates(x))
-#lwgeom::st_geod_distance(x, x)
-#lwgeom::st_geod_azimuth(x)
+# geodist::geodist(st_coordinates(x), sequential = TRUE, measure = "haversine")
+# geosphere::distHaversine(st_coordinates(x))
+# lwgeom::st_geod_distance(x, x)
+# lwgeom::st_geod_azimuth(x)
 
 # Export route to simple text file
 # use fields name, angle, and dist to generate a string
@@ -247,31 +265,33 @@ st_read_gpx <- function(
   .x <- sf::read_sf(dsn, layer = layer)
 
   if (!is.null(crs)) {
-    .x <- st_transform(.x, crs)
+    .x <- sf::st_transform(.x, crs)
   }
 
   if (keep_only_necessary) {
     .x <- .x |>
-      select(name, sym, type, cmt, desc, ele, time)
+      dplyr::select(name, sym, type, cmt, desc, ele, time)
   }
   .x
 }
 
 #' @export
 trk_preview <- function(.x) {
-  leaflet(data = st_transform(.x, crs = 4326)) |>
-    addTiles() |>
-    addPolylines()
+  leaflet(
+    data = sf::st_transform(.x, crs = 4326)
+  ) |>
+    leaflet::addTiles() |>
+    leaflet::addPolylines()
 }
 
 #' @export
 rte_arrows <- function(x_lines, x_points) {
-  bind_cols(
-    stdh_cast_substring({{ x_lines }}, "LINESTRING") |>
-      select(geometry),
+  dplyr::bind_cols(
+    stdh_cast_substring( {{ x_lines }}, "LINESTRING") |>
+      dplyr::select(geometry),
     {{ x_points }} |>
-      slice(1:(n()-1)) |>
-      st_drop_geometry()
+      dplyr::slice(1:(n()-1)) |>
+      sf::st_drop_geometry()
   ) |>
-    st_centroid()
+    sf::st_centroid()
 }

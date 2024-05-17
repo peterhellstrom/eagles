@@ -28,7 +28,3 @@ Behövs en genomgående standardisering av argumentens namn
 sf: olika beteende om magrittr pipe eller native pipe används (geometri kolumn ges inte namnet geom/geometry med base pipe)
 argumentet sf_column_name: st_sf(sf_column_name = "geom")
 Är det st_sf eller st_as_sf som ska användas för att gå från t.ex. st_sfc()
-
-sf:: drivrutinen för gpx har förändrats. Är det "avsiktligt" eller bug? Skapa reprex (förbättra befintligt)?
-
-Paketet mgrs kan ej installeras i R 4.3.x. Kontakta förvaltaren av paketet via github (issue)

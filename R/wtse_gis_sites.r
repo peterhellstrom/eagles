@@ -27,11 +27,16 @@ wtse_sites <- function(
   # values = names of tables in odbc source.
   # names = names of tables when imported to R an environment.
   tbls <- c(
-    sites = "tLokaler", sites_sub = "tLokalerUnder",
-    sites_monitoring = "tLokalerOvervakning", county = "luGeografiLan",
-    municipality = "luGeografiKommun", province = "luGeografiLandskap",
-    district = "luGeografiDistrikt", report_area = "luGeografiRapportomrade",
-    sub_area = "luGeografiDelomrade", region = "luGeografiRegion"
+    sites = "tLokaler",
+    sites_sub = "tLokalerUnder",
+    sites_monitoring = "tLokalerOvervakning",
+    county = "luGeografiLan",
+    municipality = "luGeografiKommun",
+    province = "luGeografiLandskap",
+    district = "luGeografiDistrikt",
+    report_area = "luGeografiRapportomrade",
+    sub_area = "luGeografiDelomrade",
+    region = "luGeografiRegion"
   )
 
   con <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
@@ -41,14 +46,17 @@ wtse_sites <- function(
   # assign("lkd_db", RODBC::sqlFetch(con, "tLokaler") |> tibble::as_tibble(), envir = parent.frame(n = 2))
   # Men detta steg funkar inte i R 4.3.0, behöver sätta parent.frame(n = 3). Varför?
 
-  purrr::map2(names(tbls), tbls, \(x, y) {
-    base::assign(
-      x, DBI::dbReadTable(con, y) |>
-        tibble::as_tibble(),
-      envir = base::parent.frame(n = 3)
-      # envir = globalenv() # Debug case, assign data to Global environment
-    )
-  })
+  purrr::map2(
+    names(tbls),
+    tbls,
+    \(x, y) {
+      base::assign(
+        x, DBI::dbReadTable(con, y) |>
+          tibble::as_tibble(),
+        envir = base::parent.frame(n = 3)
+        # envir = globalenv() # Debug case, assign data to Global environment
+      )
+    })
 
   # Re-format sites table, lookup text values/names based on ID-columns
   sites <- sites |>
@@ -88,7 +96,8 @@ wtse_sites <- function(
       dplyr::left_join(
         sites_monitoring |> monitoring_summary(),
         dplyr::join_by(LokalID)
-      )
+      ) |>
+      dplyr::arrange(LokalID, CensusYear)
   }
 
   if (spatial | add_coordinates) {
@@ -152,39 +161,31 @@ wtse_sites <- function(
 # wtse_sites(FALSE, 3847, TRUE, coordinate_cols = c("Easting", "Northing"), add_monitoring = FALSE)
 # wtse_sites(FALSE, 4326, TRUE, coordinate_cols = c("longitude", "latitude"), add_monitoring = FALSE)
 
-# Sum yearly monitoring posts per site
-# This function was really slow in R 4.3.0!
-# I hade re-written the function based on dplyr::case_when statements.
-# But it was confirmed that code is much faster in R 4.1.3. It is the case_when
-# statements that causes trouble.
-monitoring_summary <- function(.data, .by_column = LokalID) {
+named_join <- function(.data, .lookup_table, .join_cols, .fn_join = dplyr::left_join) {
   .data |>
-    # dplyr::filter(CensusYear >= year(now()) - 6) |>
-    dplyr::arrange(LokalID, CensusYear) |>
-    dplyr::summarize(
-      n_year_posts = dplyr::n(),
-      missing_status = sum(is.na(OvervakningUtfallID), na.rm = TRUE),
-      n_surveyed = sum(OvervakningUtfallID > 0, na.rm = TRUE),
-      n_occupied = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 44, na.rm = TRUE),
-      n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
-      n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
-      n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
-      first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      .by = {{ .by_column }}
-    )
-}
-
-named_join <- function(.data, .lookup_table, .join_cols) {
-  .data |>
-    dplyr::left_join(
+    .fn_join(
       .lookup_table,
       dplyr::join_by( {{ .join_cols }} )
     )
 }
+
+# a <- tribble(
+#   ~id, ~state_abbrev,
+#   1, "AL",
+#   2, "AK"
+# )
+#
+# b <- tribble(
+#   ~id, ~state_name,
+#   1, "Alabama",
+#   2, "Alaska",
+#   3, "Arizona"
+# )
+#
+# named_join(a, b, id, .fn_join = dplyr::left_join)
+# named_join(a, b, id, .fn_join = dplyr::right_join)
+# named_join(a, b, id, .fn_join = dplyr::full_join)
+# named_join(a, b, id, .fn_join = dplyr::inner_join)
 
 get_sites_coords <- function(con) {
   # Add geographical data (in SWEREF99 TM)
@@ -205,19 +206,19 @@ get_sites_coords <- function(con) {
 		    INNER JOIN ortnamn ON tLokaler.Ortnamn_LOPNR = ortnamn.lopnr
 		    ORDER BY ortnamn.lopnr;"
 
-  x <- DBI::dbGetQuery(
-    con, str_sql
-  ) |>
+  x <- DBI::dbGetQuery(con, str_sql) |>
     tibble::as_tibble() |>
     dplyr::mutate(
       geom = stringr::str_extract(geom, "(?<=X').*(?=')")
     )
 
   x$geom <- sf::st_as_sfc(
-    structure(as.list(x$geom), class = "WKB"), EWKB = TRUE
+    structure(as.list(x$geom), class = "WKB"),
+    EWKB = TRUE
   )
 
-  x |> sf::st_sf()
+  x |>
+    sf::st_sf()
 }
 
 # Format site codes to common format

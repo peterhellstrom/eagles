@@ -69,11 +69,6 @@ wtse_transform <- function(
   # two options, to use count or tally
   # tally might be a better option to generate counts for groups
 
-  # Is this still necessary?
-  # if (dplyr::is_grouped_df(.data)) {
-  #   return(dplyr::do(.data, wtse_transform(.)))
-  # }
-
   if (missing(.columns)) {
     .columns <- wtse_columns()
   }
@@ -123,6 +118,36 @@ wtse_vars <- function(
   }
 
   .x
+}
+
+# Sum yearly monitoring posts per site
+# This function was really slow in R 4.3.0!
+# I had re-written the function based on dplyr::case_when statements.
+# But it was confirmed that code is much faster in R 4.1.3. It is the case_when
+# statements that causes trouble.
+#' @export
+monitoring_summary <- function(
+    .data,
+    .by_column = LokalID
+) {
+  .data |>
+    # dplyr::filter(CensusYear >= year(now()) - 6) |>
+    dplyr::summarize(
+      n_year_posts = dplyr::n(),
+      missing_status = sum(is.na(OvervakningUtfallID), na.rm = TRUE),
+      n_surveyed = sum(OvervakningUtfallID > 0, na.rm = TRUE),
+      n_not_surveyed = sum(OvervakningUtfallID < 0, na.rm = TRUE),
+      n_occupied = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 44, na.rm = TRUE),
+      n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
+      n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
+      n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
+      first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      .by = {{ .by_column }}
+    )
 }
 
 #' @export
