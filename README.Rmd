@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # eagles
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/peterhellstrom/eagles/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/peterhellstrom/eagles/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of eagles is to ...

@@ -4,6 +4,8 @@
 # eagles
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/peterhellstrom/eagles/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/peterhellstrom/eagles/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of eagles is to …
@@ -24,56 +26,6 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(eagles)
-#> Loading required package: tidyverse
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.1.2     ✔ readr     2.1.4
-#> ✔ forcats   1.0.0     ✔ stringr   1.5.0
-#> ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
-#> ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-#> ✔ purrr     1.0.1     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ dplyr::filter() masks stats::filter()
-#> ✖ dplyr::lag()    masks stats::lag()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-#> Loading required package: janitor
-#> 
-#> 
-#> Attaching package: 'janitor'
-#> 
-#> 
-#> The following objects are masked from 'package:stats':
-#> 
-#>     chisq.test, fisher.test
-#> 
-#> 
-#> Loading required package: glue
-#> 
-#> Loading required package: sf
-#> 
-#> Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE
-#> 
-#> Loading required package: leaflet
-#> 
-#> Loading required package: leaflet.extras
-#> 
-#> Loading required package: mapview
-#> 
-#> The legacy packages maptools, rgdal, and rgeos, underpinning this package
-#> will retire shortly. Please refer to R-spatial evolution reports on
-#> https://r-spatial.org/r/2023/05/15/evolution4.html for details.
-#> This package is now running under evolution status 0 
-#> 
-#> Loading required package: readxl
-#> 
-#> Loading required package: writexl
-#> 
-#> 
-#> Attaching package: 'eagles'
-#> 
-#> 
-#> The following object is masked from 'package:sf':
-#> 
-#>     st_filter
 ## basic example code
 ```
 
