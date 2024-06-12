@@ -141,11 +141,16 @@ monitoring_summary <- function(
       n_not_occupied = sum(OvervakningUtfallID >= 51, na.rm = TRUE),
       n_occupied_nest = sum(OvervakningUtfallID > 0 & OvervakningUtfallID <= 41, na.rm = TRUE),
       n_productive = sum(OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34, na.rm = TRUE),
-      first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
-      last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      first_survey = my_min_max(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], fun = min),
+      last_survey = my_min_max(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], fun = max),
+      last_occupied = my_min_max(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], fun = max),
+      last_occupied_nest = my_min_max(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], fun = max),
+      last_productive = my_min_max(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], fun = max),
+      # first_survey = dplyr::first(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      # last_survey = dplyr::last(CensusYear[OvervakningUtfallID > 0 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      # last_occupied = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 44 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      # last_occupied_nest = dplyr::last(CensusYear[OvervakningUtfallID > 0 & OvervakningUtfallID <= 41 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
+      # last_productive = dplyr::last(CensusYear[OvervakningUtfallID >= 21 & OvervakningUtfallID <= 34 & !is.na(OvervakningUtfallID)], na_rm = TRUE),
       .by = {{ .by_column }}
     )
 }

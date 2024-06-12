@@ -1,5 +1,4 @@
 # https://r-pkgs.org
-
 # devtools::install_github("r-lib/devtools")
 # devtools::install_github("r-lib/usethis")
 
@@ -14,9 +13,9 @@ load_all()
 document()
 install()
 
-chk_eagles <- check()
-glimpse(chk_eagles)
-names(chk_eagles)
+chk_pkg <- check()
+glimpse(chk_pkg)
+names(chk_pkg)
 
 test()
 
@@ -30,7 +29,6 @@ usethis::use_mit_license()
 use_git_config(user.name = "peterhellstrom", user.email = "peter.hellstrom@nrm.se")
 usethis::use_git()
 usethis::use_github()
-# GitHub API error (401): Bad credentials
 
 usethis::create_github_token()
 
@@ -39,6 +37,26 @@ build_readme()
 
 # Ignore ----
 usethis::use_build_ignore(c("backup", "data-raw", "development", "examples"))
+
+# Imports ----
+usethis::use_package("dplyr", min_version = TRUE)
+usethis::use_package("purrr", min_version = TRUE)
+
+usethis::use_package("sf", min_version = TRUE)
+
+usethis::use_package("RODBC", min_version = TRUE)
+usethis::use_package("DBI", min_version = TRUE)
+
+# '::' or ':::' imports not declared from:
+# 'RJDBC' 'RODBCext' 'broom' 'data.table' 'getPass' 'glue' 'gratia'
+# 'janitor' 'jsonlite' 'lubridate' 'mgcv' 'odbc' 'pdftools' 'readr'
+# 'readxl' 'rlang' 'rstudioapi' 'rvest' 'sifr' 'stringi' 'stringr'
+# 'tibble' 'tidyr' 'tidyselect' 'xml2'
+
+# Suggests ----
+usethis::use_package("ggplot2", "Suggests")
+
+usethis::use_tidy_description()
 
 # Document data:
 # https://r-pkgs.org/data.html
@@ -50,29 +68,4 @@ library(eagles)
 
 ## Data sets ----
 usethis::use_data_raw()
-
-storrutor
-ekorutor
-fastighetsblad
-wms_layers_data
-tms_layers_data
 rc_species_list
-
-storrutor |>
-  st_as_sf(coords = c("easting", "northing"), crs = 3021) |>
-  mapview::mapview()
-
-storrutor |>
-  mutate(
-    geometry = map2(
-      easting, northing,
-      \(x, y) grid_cell(x, y, 50000, 50000)
-    )
-  ) |>
-  st_as_sf(crs = 3021) |>
-  mapview::mapview()
-
-eagles::round_up(9.45)
-eagles::lm_basemaps()
-eagles::swe_tiles(tile_providers = tms_layers_data)
-eagles::rc_species_list()

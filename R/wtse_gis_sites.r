@@ -96,8 +96,7 @@ wtse_sites <- function(
       dplyr::left_join(
         sites_monitoring |> monitoring_summary(),
         dplyr::join_by(LokalID)
-      ) |>
-      dplyr::arrange(LokalID, CensusYear)
+      )
   }
 
   if (spatial | add_coordinates) {
@@ -161,6 +160,18 @@ wtse_sites <- function(
 # wtse_sites(FALSE, 3847, TRUE, coordinate_cols = c("Easting", "Northing"), add_monitoring = FALSE)
 # wtse_sites(FALSE, 4326, TRUE, coordinate_cols = c("longitude", "latitude"), add_monitoring = FALSE)
 
+
+#' Title
+#'
+#' @param .data
+#' @param .lookup_table
+#' @param .join_cols
+#' @param .fn_join
+#'
+#' @return
+#' @export
+#'
+#' @examples
 named_join <- function(.data, .lookup_table, .join_cols, .fn_join = dplyr::left_join) {
   .data |>
     .fn_join(

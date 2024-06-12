@@ -145,11 +145,16 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 #' @export
 convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
   .x |>
-    dplyr::mutate(dplyr::across({{cols}}, \(x) dplyr::case_when(
-      x %in% yes_value ~ TRUE,
-      x %in% no_value ~ FALSE,
-      TRUE ~ NA))) |>
-    dplyr::mutate(dplyr::across({{cols}}, as.logical))
+    dplyr::mutate(
+      dplyr::across({{cols}}, \(x) dplyr::case_when(
+        x %in% yes_value ~ TRUE,
+        x %in% no_value ~ FALSE,
+        TRUE ~ NA)
+      )
+    ) |>
+    dplyr::mutate(
+      dplyr::across({{cols}}, as.logical)
+    )
 }
 
 # Ersätt specificerat värde med kolumnnamnet för variabeln
@@ -162,8 +167,11 @@ colname_to_value <- function(.x, cols, yes_value = TRUE, no_value = NA) {
   .x |>
     dplyr::mutate(
       dplyr::across({{cols}}, as.character),
-      dplyr::across({{cols}},
-                    \(x) dplyr::if_else(x %in% yes_value, dplyr::cur_column(), no_value)))
+      dplyr::across(
+        {{cols}},
+        \(x) dplyr::if_else(x %in% yes_value, dplyr::cur_column(), no_value)
+      )
+    )
 }
 
 # x <- tribble(
@@ -183,30 +191,37 @@ colname_to_value2 <- function(.x, cols) {
   cols <- enquo(cols)
   .x %>%
     dplyr::mutate(
-      dplyr::across(!!cols,
-                    ~ dplyr::case_when
-                    (. == TRUE ~ dplyr::cur_column(),
-                      TRUE ~ NA_character_))) %>%
-    dplyr::mutate(dplyr::across(!!cols, ~ as.character(.)))
+      dplyr::across(
+        !!cols,
+        ~ dplyr::case_when
+        (. == TRUE ~ dplyr::cur_column(),
+          TRUE ~ NA_character_)
+      )
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(!!cols, ~ as.character(.))
+    )
 }
 
 #' @export
 sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
   .x %>%
-    purrr::map(~ .data %>%
-                 dplyr::group_by_at(.x) %>%
-                 dplyr::summarize_at(vars({{.vars}}), .fn, na.rm = TRUE)) %>%
+    purrr::map(
+      ~ .data %>%
+        dplyr::group_by_at(.x) %>%
+        dplyr::summarize_at(vars({{.vars}}), .fn, na.rm = TRUE)
+    ) %>%
     dplyr::bind_rows()
 }
 
 #' @export
 add_wt <- function(.x, .var, ...) {
   .x |>
-    dplyr::select({{.var}}, ...) |>
+    dplyr::select( {{.var }}, ...) |>
     dplyr::distinct() |>
-    dplyr::add_count({{.var}}) |>
+    dplyr::add_count( {{.var}} ) |>
     dplyr::mutate(wt = 1/n) |>
-    dplyr::arrange({{.var}})
+    dplyr::arrange( {{.var}} )
 }
 
 #' @export
@@ -241,14 +256,21 @@ download_zip <- function(
   }
 
   # create list of all zip-files in the working directory
-  files_zip <- list.files(dl_wd, pattern = paste(".", file_type, sep = ""),
-                          full.names = TRUE)
+  files_zip <- list.files(
+    dl_wd,
+    pattern = paste(".", file_type, sep = ""),
+    full.names = TRUE
+  )
 
   if (files_unzip) {
     # unzip each downloaded archive
     for (i in 1:length(files_zip)) {
-      try(unzip(files_zip[i], junkpaths = junkpaths, overwrite = overwrite,
-                exdir = dl_wd))
+      try(unzip(
+        files_zip[i],
+        junkpaths = junkpaths,
+        overwrite = overwrite,
+        exdir = dl_wd)
+      )
     }
   }
 

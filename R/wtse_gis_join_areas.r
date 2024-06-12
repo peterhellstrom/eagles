@@ -22,10 +22,10 @@ admin_areas_load <- function(
     )
 ) {
 
-  walk2(
+  purrr::walk2(
     import_to_sf,
     layer,
-    \(x, y) assign(
+    \(x, y) base::assign(
       x,
       # sf::st_read(dsn = db, layer = y, quiet = TRUE),
       sf::read_sf(dsn = db, layer = y),
