@@ -75,6 +75,7 @@ usethis::use_package("xml2", min_version = TRUE)
 # Dependencies on non-CRAN packages:
 usethis::use_dev_package("RODBCext", remote = "github::zozlak/RODBCext")
 usethis::use_dev_package("sifr", remote = "github::s-fleck/sifr")
+usethis::use_dev_package("swecoords", remote = "github::peterhellstrom/swecoords")
 
 # Suggests ----
 usethis::use_package("ggplot2", "Suggests")

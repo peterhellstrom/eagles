@@ -118,7 +118,8 @@ wtse_sites <- function(
       sf::st_sf()
 
     if (add_coordinates) {
-      sites <- sites |> sfc_as_cols(names = coordinate_cols)
+      sites <- sites |>
+        swecoords::sfc_as_cols(names = coordinate_cols)
     }
 
   } else if (!spatial) {
