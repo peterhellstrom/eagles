@@ -25,7 +25,11 @@ test()
 
 usethis::use_mit_license()
 
-use_git_config(user.name = "peterhellstrom", user.email = "peter.hellstrom@nrm.se")
+use_git_config(
+  user.name = "peterhellstrom",
+  user.email = "peter.hellstrom@nrm.se"
+)
+
 usethis::use_git()
 usethis::use_github()
 
@@ -71,8 +75,6 @@ usethis::use_package("xml2", min_version = TRUE)
 # Dependencies on non-CRAN packages:
 usethis::use_dev_package("RODBCext", remote = "github::zozlak/RODBCext")
 usethis::use_dev_package("sifr", remote = "github::s-fleck/sifr")
-# RODBCext
-# sifr
 
 # Suggests ----
 usethis::use_package("ggplot2", "Suggests")
