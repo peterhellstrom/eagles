@@ -11,7 +11,6 @@ load_all()
 
 # Must run document() to add export functions to NAMESPACE
 document()
-install()
 
 chk_pkg <- check()
 dplyr::glimpse(chk_pkg)
@@ -36,22 +35,44 @@ use_readme_rmd()
 build_readme()
 
 # Ignore ----
+usethis::use_git_ignore(c("backup", "development"))
 usethis::use_build_ignore(c("backup", "data-raw", "development", "examples"))
 
 # Imports ----
-usethis::use_package("dplyr", min_version = TRUE)
-usethis::use_package("purrr", min_version = TRUE)
-
-usethis::use_package("sf", min_version = TRUE)
-
-usethis::use_package("RODBC", min_version = TRUE)
+usethis::use_package("broom", min_version = TRUE)
+usethis::use_package("data.table", min_version = TRUE)
 usethis::use_package("DBI", min_version = TRUE)
+usethis::use_package("dplyr", min_version = TRUE)
+usethis::use_package("getPass", min_version = TRUE)
+usethis::use_package("glue", min_version = TRUE)
+usethis::use_package("gratia", min_version = TRUE)
+usethis::use_package("janitor", min_version = TRUE)
+usethis::use_package("jsonlite", min_version = TRUE)
+usethis::use_package("lubridate", min_version = TRUE)
+usethis::use_package("mgcv", min_version = TRUE)
+usethis::use_package("odbc", min_version = TRUE)
+usethis::use_package("pdftools", min_version = TRUE)
+usethis::use_package("purrr", min_version = TRUE)
+usethis::use_package("readr", min_version = TRUE)
+usethis::use_package("readxl", min_version = TRUE)
+usethis::use_package("RJDBC", min_version = TRUE)
+usethis::use_package("rlang", min_version = TRUE)
+usethis::use_package("RODBC", min_version = TRUE)
+usethis::use_package("rstudioapi", min_version = TRUE)
+usethis::use_package("rvest", min_version = TRUE)
+usethis::use_package("sf", min_version = TRUE)
+usethis::use_package("stringi", min_version = TRUE)
+usethis::use_package("stringr", min_version = TRUE)
+usethis::use_package("tibble", min_version = TRUE)
+usethis::use_package("tidyr", min_version = TRUE)
+usethis::use_package("tidyselect", min_version = TRUE)
+usethis::use_package("xml2", min_version = TRUE)
 
-# '::' or ':::' imports not declared from:
-# 'RJDBC' 'RODBCext' 'broom' 'data.table' 'getPass' 'glue' 'gratia'
-# 'janitor' 'jsonlite' 'lubridate' 'mgcv' 'odbc' 'pdftools' 'readr'
-# 'readxl' 'rlang' 'rstudioapi' 'rvest' 'sifr' 'stringi' 'stringr'
-# 'tibble' 'tidyr' 'tidyselect' 'xml2'
+# Dependencies on non-CRAN packages:
+usethis::use_dev_package("RODBCext", remote = "github::zozlak/RODBCext")
+usethis::use_dev_package("sifr", remote = "github::s-fleck/sifr")
+# RODBCext
+# sifr
 
 # Suggests ----
 usethis::use_package("ggplot2", "Suggests")
@@ -61,7 +82,10 @@ usethis::use_tidy_description()
 # Document data:
 # https://r-pkgs.org/data.html
 
-install_github("peterhellstrom/eagles")
+# Install package ----
+install()
+
+# install_github("peterhellstrom/eagles")
 
 ## Load package ----
 library(eagles)
