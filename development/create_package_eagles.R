@@ -14,7 +14,7 @@ document()
 install()
 
 chk_pkg <- check()
-glimpse(chk_pkg)
+dplyr::glimpse(chk_pkg)
 names(chk_pkg)
 
 test()
