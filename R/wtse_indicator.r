@@ -3,11 +3,13 @@
 
 #' @export
 calculate_indicator <- function(.data) {
+
   if (dplyr::is_grouped_df(.data)) {
     return(dplyr::do(.data, calculate_indicator(.)))
   }
-  .data %>%
-    mutate(
+
+  .data |>
+    dplyr::mutate(
       checked = rowSums(select(., grep("[0-3]", names(.)))),
       unproductive = `0C` + `0G`,
       productive = checked - unproductive,
@@ -19,24 +21,43 @@ calculate_indicator <- function(.data) {
       brood_size_climbed =  nestlings_climbed / broods_climbed,
       brood_size_ground =  nestlings_ground / broods_ground,
       productivity = prop_productive * brood_size_climbed,
-      status = ifelse(productivity < 0.97 | brood_size_climbed < 1.64 | prop_productive < 0.59, "sub-GES", "GES"))
+      status = dplyr::if_else(
+        productivity < 0.97 | brood_size_climbed < 1.64 | prop_productive < 0.59,
+        "sub-GES", "GES"
+      )
+    )
 }
 
 # GAM-models for WTSE-data
 #' @export
 gam_prop_productive <- function(df) {
-  mgcv::gam(cbind(productive, unproductive) ~ s(Year, bs = "cs", k = -1),
-            family = binomial("logit"), method = "REML", data = df) }
+  mgcv::gam(
+    cbind(productive, unproductive) ~ s(Year, bs = "cs", k = -1),
+    family = binomial("logit"),
+    method = "REML",
+    data = df
+  )
+}
 
 #' @export
 gam_brood_size <- function(df) {
-  mgcv::gam(brood_size_climbed ~ s(Year, bs = "cs", k = -1),
-            family = gaussian(), method = "REML", data = df) }
+  mgcv::gam(
+    brood_size_climbed ~ s(Year, bs = "cs", k = -1),
+    family = gaussian(),
+    method = "REML",
+    data = df
+  )
+}
 
 #' @export
 gam_productivity <- function(df) {
-  mgcv::gam(productivity ~ s(Year, bs = "cs", k = -1),
-            family = gaussian(), method = "REML", data = df) }
+  mgcv::gam(
+    productivity ~ s(Year, bs = "cs", k = -1),
+    family = gaussian(),
+    method = "REML",
+    data = df
+  )
+}
 
 
 # .x = data.frame with data, columns names of data frame matches possible breeding outcomes,
@@ -45,29 +66,35 @@ gam_productivity <- function(df) {
 # This is a non-parametric bootstrap approach, sample with replacement
 
 #' @export
-wtse_boot <- function(.x,
-                      outcomes = c("0C", "1", "2", "3", "0G", ">0", ">=1", ">=2", ">=3"),
-                      n_boot = 1000) {
+wtse_boot <- function(
+    .x,
+    outcomes = c("0C", "1", "2", "3", "0G", ">0", ">=1", ">=2", ">=3"),
+    n_boot = 1000
+) {
 
-	out <- vector("list", nrow(.x))
+  out <- vector("list", nrow(.x))
 
-	for (i in seq_len(nrow(.x))) {
-		.x_counts <- .x[i, colnames(.x) %in% outcomes]
-		.x_bootstrap_vector <- rep(outcomes, .x_counts)
-		.x_bootstrap_samples <- replicate(n_boot, sample(.x_bootstrap_vector, replace = TRUE))
-		.x_bootstrap_counts <- lapply(seq_len(ncol(.x_bootstrap_samples)), function(j) {
-		  table(factor(.x_bootstrap_samples[,j], levels = outcomes)) } )
-		.x_bootstrap_counts <- as.data.frame(do.call(rbind, .x_bootstrap_counts))
-		m <- calculate_indicator(.x_bootstrap_counts)
-		out[[i]] <- m
-	}
-	out
+  for (i in seq_len(nrow(.x))) {
+    .x_counts <- .x[i, colnames(.x) %in% outcomes]
+    .x_bootstrap_vector <- rep(outcomes, .x_counts)
+    .x_bootstrap_samples <- replicate(n_boot, sample(.x_bootstrap_vector, replace = TRUE))
+    .x_bootstrap_counts <- lapply(seq_len(ncol(.x_bootstrap_samples)), function(j) {
+      table(factor(.x_bootstrap_samples[,j], levels = outcomes)) } )
+    .x_bootstrap_counts <- as.data.frame(do.call(rbind, .x_bootstrap_counts))
+    m <- calculate_indicator(.x_bootstrap_counts)
+    out[[i]] <- m
+  }
+  out
 }
 
 #' @export
-wtse_productivity <- function(dd, stats.brood = TRUE,
-                              bootstrap.brood = TRUE, n.boot = 10000,
-                              replace = TRUE) {
+wtse_productivity <- function(
+    dd,
+    stats.brood = TRUE,
+    bootstrap.brood = TRUE,
+    n.boot = 10000,
+    replace = TRUE
+) {
 
   # Andel reproducerande par (med aktiva bon)
   repr.par <- with(dd, H1 + H2 + H3 + Hmin1 + Hmin2 + Hmin3)
@@ -88,10 +115,12 @@ wtse_productivity <- function(dd, stats.brood = TRUE,
   produktivitet <- with(dd, pull.alla / koll.par)
   produktivitet.korr <- with(dd, pull.korr / koll.par)
 
-  out <- cbind(dd,
-               repr.par, impr.par, koll.par, and.repr.par,
-               pull.sakra, pull.sakra.n, pull.alla, pull.alla.n, pull.korr, kullstorlek,
-               produktivitet, produktivitet.korr)
+  out <- cbind(
+    dd,
+    repr.par, impr.par, koll.par, and.repr.par,
+    pull.sakra, pull.sakra.n, pull.alla, pull.alla.n, pull.korr, kullstorlek,
+    produktivitet, produktivitet.korr
+  )
 
   # Extras on kullstorlek
   if (bootstrap.brood) {
@@ -114,10 +143,15 @@ wtse_productivity <- function(dd, stats.brood = TRUE,
 
 # Brood size, batches with 25 = set size to 25 in sample(x.bs, size=25, replace=TRUE)
 #' @export
-brood_size_boot <- function(x = c(24, 58, 9), n.boot = 10000,
-                            q = c(0.025, 0.5, 0.975),
-                            min = 15, size = sum(x),
-                            replace = TRUE, plot = TRUE) {
+brood_size_boot <- function(
+    x = c(24, 58, 9),
+    n.boot = 10000,
+    q = c(0.025, 0.5, 0.975),
+    min = 15,
+    size = sum(x),
+    replace = TRUE,
+    plot = TRUE
+) {
 
   if (length(x) != length(c(1, 2, 3))) stop("Invalid input vector, must be of length 3")
   if (is.na(sum(x))) return(c(NA, NA, NA))
@@ -129,10 +163,15 @@ brood_size_boot <- function(x = c(24, 58, 9), n.boot = 10000,
   x.bs <- rep(c(1, 2, 3), x)
   z.bs <- replicate(n.boot, mean(sample(x.bs, size = size, replace = replace)))
   z <- quantile(z.bs, q)
+
   if (plot) {
     # Draw histogram
-    hist(z.bs, breaks = 50, freq = FALSE, col = "steelblue",
-         xlab = "Brood size", ylab = "Density", main = "Reference level, WTE brood size", font.lab = 2)
+    hist(
+      z.bs, breaks = 50, freq = FALSE, col = "steelblue",
+      xlab = "Brood size", ylab = "Density",
+      main = "Reference level, WTE brood size",
+      font.lab = 2
+    )
     abline(v = quantile(z.bs, c(0.025, 0.5, 0.975)), lty = 2, lwd = 2, col = c(1,2,1))
   }
   z

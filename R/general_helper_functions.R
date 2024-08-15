@@ -48,6 +48,9 @@ get_member <- function(.x, sep = ",", pos = 1) {
 }
 
 #' @export
+# chec fs::fs_bytes() as an alternative!
+# # https://stackoverflow.com/questions/63543853/how-can-we-get-the-formated-file-size-in-kb-mb-gb-tb-in-r
+# https://stackoverflow.com/questions/10910688/converting-kilobytes-megabytes-etc-to-bytes-in-r
 convert_bytes <- function(x) {
   ptn <- "(\\d*(.\\d+)*)(.*)"
   num  <- as.numeric(sub(ptn, "\\1", x))

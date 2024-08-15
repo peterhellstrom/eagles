@@ -47,13 +47,17 @@ exiftool_read <- function(
   write.table(
     c(args, tags, path),
     args_file,
-    quote = FALSE, row.names = FALSE, col.names = FALSE)
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = FALSE
+  )
 
   # System command, response stored in JSON-format
   exif_call <- system2(
     exiftool_path,
     args = c("-@", args_file),
-    stdout = output_file)
+    stdout = output_file
+  )
 
   # Import data in JSON-format
   exif_data_parse <- jsonlite::fromJSON(output_file) |>
@@ -67,7 +71,9 @@ exiftool_read <- function(
 
   # Delete temporary files
   if (delete_temp_files) {
-    on.exit(unlink(c(args_file, output_file)))
+    on.exit(
+      unlink(c(args_file, output_file))
+    )
   }
 
   exif_data_parse
