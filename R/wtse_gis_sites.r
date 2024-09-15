@@ -8,7 +8,7 @@
 # A previous version of this function therefore had extra functionality
 # where it was possible to connect to an odbc source either with
 # the RODBC or the DBI package. This functionality was removed in
-# September 2023, in favor of the DBI package as the DBI errors were no longer
+# September 2023, in favour of the DBI package as the DBI errors were no longer
 # present.
 #
 #' @export
@@ -21,53 +21,46 @@ wtse_sites <- function(
     encoding = "",
     add_subsites = TRUE,
     add_monitoring = TRUE,
-    drop_id_columns = TRUE) {
+    drop_id_columns = TRUE,
+    ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg"
+) {
 
-  # Import data tables
-  # values = names of tables in odbc source.
-  # names = names of tables when imported to R an environment.
-  tbls <- c(
-    sites = "tLokaler",
-    sites_sub = "tLokalerUnder",
-    sites_monitoring = "tLokalerOvervakning",
-    county = "luGeografiLan",
-    municipality = "luGeografiKommun",
-    province = "luGeografiLandskap",
-    district = "luGeografiDistrikt",
-    report_area = "luGeografiRapportomrade",
-    sub_area = "luGeografiDelomrade",
-    region = "luGeografiRegion"
-  )
-
-  con <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
   on.exit(DBI::dbDisconnect(con))
+  con <- DBI::dbConnect(odbc::odbc(), odbc_name, encoding = encoding)
+  con_tbls <- DBI::dbListTables(con)
 
-  # Assign variables in the current R environment (= within the function)
-  # assign("lkd_db", RODBC::sqlFetch(con, "tLokaler") |> tibble::as_tibble(), envir = parent.frame(n = 2))
-  # Men detta steg funkar inte i R 4.3.0, behöver sätta parent.frame(n = 3). Varför?
+  if (spatial | add_coordinates) {
+    if (!any(file.exists(ortnamn_path), "tLokalerOrtnamn" %in% con_tbls)) {
+      spatial <- FALSE
+      add_coordinates <- FALSE
+      message("'ortnamn' GeoPackage or local table tLokalerOrtnamn can not be found. Spatial data can not be returned!")
+    }
+  }
 
-  purrr::map2(
-    names(tbls),
-    tbls,
-    \(x, y) {
-      base::assign(
-        x, DBI::dbReadTable(con, y) |>
-          tibble::as_tibble(),
-        envir = base::parent.frame(n = 3)
-        # envir = globalenv() # Debug case, assign data to Global environment
-      )
-    })
+  sites_sql <-
+    "SELECT tLokaler.*,
+   luGeografiRegion.Region,
+   luGeografiLan.LanBokstav AS Lan,
+   luGeografiKommun.Kommun,
+   luGeografiLandskap.LandskapBokstav AS Landskap,
+   luGeografiDistrikt.Distrikt,
+   luGeografiRapportomrade.Rapportomrade,
+   luGeografiDelomrade.Delomrade
+   FROM (((((((tLokaler
+   LEFT JOIN luGeografiRegion ON tLokaler.RegionID = luGeografiRegion.RegionID)
+   LEFT JOIN luGeografiLan ON tLokaler.LanID = luGeografiLan.LanID)
+   LEFT JOIN luGeografiKommun ON tLokaler.KommunID = luGeografiKommun.KommunID)
+   LEFT JOIN luGeografiLandskap ON tLokaler.LandskapID = luGeografiLandskap.LandskapID)
+   LEFT JOIN luGeografiDistrikt ON tLokaler.DistriktID = luGeografiDistrikt.DistriktID)
+   LEFT JOIN luGeografiRapportomrade ON tLokaler.RapportomradeID = luGeografiRapportomrade.RapportomradeID)
+   LEFT JOIN luGeografiDelomrade ON tLokaler.DelomradeID = luGeografiDelomrade.DelomradeID)
+   ORDER BY tLokaler.LanID, tLokaler.Lokalkod"
 
-  # Re-format sites table, lookup text values/names based on ID-columns
+  sites <- DBI::dbGetQuery(con, sites_sql) |>
+    tibble::as_tibble()
+
+  # Re-format sites table
   sites <- sites |>
-    dplyr::arrange(LanID, Lokalkod) |>
-    named_join(region |> dplyr::select(RegionID, Region), RegionID) |>
-    named_join(county |> dplyr::select(LanID, Lan = LanBokstav), LanID) |>
-    named_join(municipality |> dplyr::select(KommunID, Kommun), KommunID) |>
-    named_join(province |> dplyr::select(LandskapID, Landskap = LandskapBokstav), LandskapID) |>
-    named_join(district |> dplyr::select(DistriktID, Distrikt), DistriktID) |>
-    named_join(report_area |> dplyr::select(RapportomradeID, Rapportomrade), RapportomradeID) |>
-    named_join(sub_area |> dplyr::select(DelomradeID, Delomrade), DelomradeID) |>
     dplyr::relocate(Region:Delomrade, .after = LokalID) |>
     # Drop some non-essential columns (this step might change)
     dplyr::select(-Alias, -KommentarHemlig, -OrtnamnOsakert)
@@ -78,6 +71,8 @@ wtse_sites <- function(
   }
 
   if (add_subsites) {
+    sites_sub <- DBI::dbReadTable(con, "tLokalerUnder") |>
+      tibble::as_tibble()
     # Sub-sites, summarize to one row per main site.
     sites_sub_sum <- sites_sub |>
       dplyr::arrange(LokalID, LokalerUnderID) |>
@@ -87,11 +82,19 @@ wtse_sites <- function(
       )
 
     sites <- sites |>
-      dplyr::left_join(sites_sub_sum, dplyr::join_by(LokalID)) |>
-      dplyr::relocate(LokalUnder, .after = Lokalnamn)
+      dplyr::left_join(
+        sites_sub_sum,
+        dplyr::join_by(LokalID)
+      ) |>
+      dplyr::relocate(
+        LokalUnder,
+        .after = Lokalnamn
+      )
   }
 
   if (add_monitoring) {
+    sites_monitoring <- DBI::dbReadTable(con, "tLokalerOvervakning") |>
+      tibble::as_tibble()
     sites <- sites |>
       dplyr::left_join(
         sites_monitoring |> monitoring_summary(),
@@ -101,7 +104,27 @@ wtse_sites <- function(
 
   if (spatial | add_coordinates) {
 
-    sites_coords <- get_sites_coords(con)
+    if ("tLokalerOrtnamn" %in% con_tbls) {
+      # message("Use spatial data in tLokalerOrtnamn")
+
+      sites_coords <- DBI::dbReadTable(con, "tLokalerOrtnamn") |>
+        tibble::as_tibble() |>
+        sf::st_as_sf(coords = c("easting", "northing"), crs = 3006)
+
+    } else {
+      # message("Use spatial data in ortnamn GeoPackage")
+
+      ortnamn_ids <- sites |>
+        dplyr::filter(!is.na(Ortnamn_LOPNR)) |>
+        dplyr::pull(Ortnamn_LOPNR) |>
+        stringr::str_c(collapse = ", ")
+
+      sites_coords <- sf::read_sf(
+        ortnamn_path,
+        query = glue::glue("SELECT DISTINCT lopnr, geom FROM ortnamn WHERE lopnr IN ({ortnamn_ids})")
+      )
+    }
+    # sites_coords <- get_sites_coords(con)
 
     if (!is.null(crs)) {
       sites_coords <- sites_coords |>
@@ -114,7 +137,7 @@ wtse_sites <- function(
     sites <- sites |>
       dplyr::inner_join(
         sites_coords,
-        dplyr::join_by(Ortnamn_LOPNR == Lopnr)) |>
+        dplyr::join_by(Ortnamn_LOPNR == lopnr)) |>
       sf::st_sf()
 
     if (add_coordinates) {
@@ -129,9 +152,9 @@ wtse_sites <- function(
       sites <- sites |>
         dplyr::left_join(
           sites_coords |>
-            sfc_as_cols(names = coordinate_cols) |>
+            swecoords::sfc_as_cols(names = coordinate_cols) |>
             sf::st_drop_geometry(),
-          dplyr::join_by(Ortnamn_LOPNR == Lopnr)
+          dplyr::join_by(Ortnamn_LOPNR == lopnr)
         )
     }
   }
@@ -173,7 +196,12 @@ wtse_sites <- function(
 #' @export
 #'
 #' @examples
-named_join <- function(.data, .lookup_table, .join_cols, .fn_join = dplyr::left_join) {
+named_join <- function(
+    .data,
+    .lookup_table,
+    .join_cols,
+    .fn_join = dplyr::left_join
+) {
   .data |>
     .fn_join(
       .lookup_table,
@@ -213,10 +241,10 @@ get_sites_coords <- function(con) {
   # more than one data source (e.g. a GeoPackage and an MS Access db).
 
   str_sql <-
-    "SELECT DISTINCT ortnamn.lopnr AS Lopnr, ortnamn.geom
-		    FROM tLokaler
-		    INNER JOIN ortnamn ON tLokaler.Ortnamn_LOPNR = ortnamn.lopnr
-		    ORDER BY ortnamn.lopnr;"
+    "SELECT DISTINCT ortnamn.lopnr, ortnamn.geom
+     FROM tLokaler
+     INNER JOIN ortnamn ON tLokaler.Ortnamn_LOPNR = ortnamn.lopnr
+     ORDER BY ortnamn.lopnr;"
 
   x <- DBI::dbGetQuery(con, str_sql) |>
     tibble::as_tibble() |>
