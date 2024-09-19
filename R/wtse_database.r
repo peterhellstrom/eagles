@@ -1,4 +1,73 @@
 #' @export
+get_dir_path <- function(k_id, v_id) {
+  sprintf('k%02d/v%04d', k_id, v_id)
+}
+
+#' @export
+set_file_name <- function(
+    k_id,
+    v_id,
+    b_id,
+    sep = ".",
+    file_extension = "jpg"
+) {
+  sprintf(
+    'k%02d%sv%04d%sb%04d.%s',
+    k_id, sep, v_id, sep, b_id, file_extension
+  )
+}
+
+#' @export
+get_seq_start <- function(
+    db_dir_base,
+    db_dir_path,
+    pattern = "*.jpg",
+    start = 12,
+    end = 15
+) {
+
+  get_path <- file.path(db_dir_base, db_dir_path)
+
+  if (dir.exists(get_path)) {
+
+    x <- list.files(
+      path = get_path,
+      pattern = pattern
+    )
+
+    stringr::str_sub(x, start = start, end = end) |>
+      readr::parse_number() |>
+      max() + 1
+
+  } else {
+    cat("Specified directory does not exist!", "\n")
+  }
+}
+
+# db_dir_base <- "E:/NRM/NA/PAN/PAN_Delad/DataBase/Arkivdok"
+# k_id <- c(3, 3, 1)
+# v_id <- c(274, 253, 271)
+# b_id <- c(1, 1, 3)
+#
+# get_dir_path(k_id, v_id)
+# set_file_name(k_id, v_id, b_id)
+# set_file_name(k_id, v_id, b_id, sep = "_", file_extension = "tif")
+#
+# f <- file.path(
+#   db_dir_base,
+#   get_dir_path(k_id, v_id),
+#   set_file_name(k_id, v_id, b_id)
+# )
+#
+# f
+# file.exists(f)
+#
+# map_int(
+#   get_dir_path(k_id, v_id),
+#   \(x) get_seq_start(db_dir_base, x)
+# )
+
+#' @export
 db_copy_new_files <- function(
     input_dir, db_dir_base,
     k_id, v_id,
@@ -20,79 +89,37 @@ db_copy_new_files <- function(
   # Rename existing files in input directory
   x_new <- file.path(input_dir, x_new)
 
-	if (execute) {
-	  file.rename(x, x_new)
-	}
+  if (execute) {
+    file.rename(x, x_new)
+  }
 
   # Create output directory
   db_dir <- get_dir_path(k_id = k_id, v_id = v_id)
-	db_dir_path <- file.path(db_dir_base, db_dir)
+  db_dir_path <- file.path(db_dir_base, db_dir)
 
-	if (execute) {
-	  if (!dir.exists(db_dir_path)) {
-	    dir.create(db_dir_path)
-	  }
-	  if (dir.exists(db_dir_path)) {
-	    file.copy(
-	      x_new,
-	      file.path(db_dir_path, basename(x_new)),
-	      overwrite = overwrite,
-	      copy.mode = TRUE,
-	      copy.date = TRUE
-	    )
-		}
-	}
+  if (execute) {
+    if (!dir.exists(db_dir_path)) {
+      dir.create(db_dir_path)
+    }
+    if (dir.exists(db_dir_path)) {
+      file.copy(
+        x_new,
+        file.path(db_dir_path, basename(x_new)),
+        overwrite = overwrite,
+        copy.mode = TRUE,
+        copy.date = TRUE
+      )
+    }
+  }
 
-	invisible(
-	  list(
-	    x = x,
-	    x_new = x_new,
-	    db_dir = db_dir,
-	    db_dir_path = db_dir_path
-	  )
-	)
-}
-
-# Helper functions
-#' @export
-get_dir_path <- function(k_id, v_id) {
-  glue::glue("k{stringr::str_pad(k_id, width = 2, pad = 0)}/v{stringr::str_pad(v_id, width = 4, pad = 0)}")
-}
-
-#' @export
-set_file_name <- function(k_id, v_id, b_id, sep = ".", pattern = ".jpg") {
-	# stringr::str_c(
-	# 	"k", stringr::str_pad(k_id, width = 2, pad = 0),
-	# 	sep, "v", stringr::str_pad(v_id, width = 4, pad = 0),
-	# 	sep, "b", stringr::str_pad(b_id, width = 4, pad = 0),
-	# 	pattern
-	# )
-
-  glue::glue(
-    "k{stringr::str_pad(k_id, width = 2, pad = 0)}{sep}v{stringr::str_pad(v_id, width = 4, pad = 0)}{sep}b{stringr::str_pad(b_id, width = 4, pad = 0)}{pattern}"
+  invisible(
+    list(
+      x = x,
+      x_new = x_new,
+      db_dir = db_dir,
+      db_dir_path = db_dir_path
+    )
   )
-}
-
-# get_dir_path(1, 1)
-# set_file_name(1, 1, 1)
-# set_file_name(1, 1, 1, sep = "_", pattern = ".tif")
-
-#' @export
-get_seq_start <- function(
-    db_dir_base,
-    db_dir_path,
-    pattern = "*.jpg",
-    start = 12, stop = 15
-    ) {
-
-  get_path <- file.path(db_dir_base, db_dir_path)
-
-	if (dir.exists(get_path)) {
-		x <- list.files(path = get_path, pattern = pattern)
-		max(as.numeric(substr(x = x, start = start, stop = stop))) + 1
-	} else {
-		cat("Specified directory does not exist!", "\n")
-	}
 }
 
 #' @export
@@ -150,15 +177,21 @@ db_insert_archive <- function(
 
   sql_insert_data <- sql_insert_data |>
     tibble::as_tibble() |>
-    dplyr::anti_join(fls_exist, by = "Filnamn")
-
+    dplyr::anti_join(
+      fls_exist, dplyr::join_by(Filnamn)
+    )
   if (execute) {
 
     sql_insert_str <-
-      "INSERT INTO tArkivDok (VolymID, Lopnr, Filnamn, KontaktID, KontaktText, TypDataID, TypHandlingID, TidsPeriod) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO tArkivDok (
+      VolymID, Lopnr, Filnamn, KontaktID, KontaktText,
+      TypDataID, TypHandlingID, TidsPeriod)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
     RODBCext::sqlExecute(
-      con, sql_insert_str, data = as.list(sql_insert_data)
+      con,
+      sql_insert_str,
+      data = as.list(sql_insert_data)
     )
 
     # Check if data were inserted to db
@@ -168,7 +201,7 @@ db_insert_archive <- function(
     #  dplyr::select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
 
   } else {
-      return(sql_insert_data)
+    return(sql_insert_data)
   }
 
   RODBC::odbcClose(con)
