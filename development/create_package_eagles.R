@@ -96,3 +96,7 @@ library(eagles)
 ## Data sets ----
 usethis::use_data_raw()
 rc_species_list
+
+# Test functions ----
+
+wtse_sites(add_monitoring = FALSE)

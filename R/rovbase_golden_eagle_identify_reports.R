@@ -35,6 +35,7 @@
 # Funktion som identifierar nedladdade rapporter ----
 # NOTE: wrong behaviour if copy_files = TRUE and delete_old = FALSE
 # This is an impossible action, so files are overwritten anyway.
+
 #' @export
 find_rovbase_reports <- function(
     data_dir,
@@ -44,8 +45,10 @@ find_rovbase_reports <- function(
     import = FALSE,
     delete_old = FALSE,
     pattern = utils::glob2rx(paste0(user, "*.xlsx")),
-    data_dir_copy = "rapporter_senaste"
-    ) {
+    data_dir_copy = "rapporter_senaste",
+    include_old_versions = FALSE,
+    count_rows = FALSE
+) {
 
   # Kontrollera att angiven mapp dit rapporter laddats ned finns
   if (!dir.exists(data_dir)) {
@@ -81,14 +84,16 @@ find_rovbase_reports <- function(
   # Läs in kolumnrubriker från hittade Excel-rapporter
   # använd argumentet n_max = 0 i readxl::read_excel.
   # Extrahera metadata från rapporterna
-  # OBS! Vad händer om det finns flera versioner av samma rapport
-  # med olika datumstämplar?
   fls <- fls |>
     dplyr::mutate(
-      columns = purrr::map(file.path(data_dir, file), \(x) {
-        readxl::read_excel(x, n_max = 0) |>
-          colnames() } )
-    ) |>
+      columns = purrr::map(
+        file.path(data_dir, file),
+        \(x) readxl::read_excel(x, n_max = 0) |>
+          colnames()
+      )
+    )
+
+  fls <- fls |>
     dplyr::mutate(
       n_columns = lengths(columns),
       user_name = stringr::str_sub(file, 1, 4),
@@ -108,10 +113,28 @@ find_rovbase_reports <- function(
 
   fls <- fls |>
     tidyr::drop_na(report_nr) |>
-    dplyr::group_by(report_short_name) |>
     # Sortera så att nyaste rapporterna kommer först
-    dplyr::arrange(report_short_name, dplyr::desc(download_dttm)) |>
-    dplyr::mutate(version = dplyr::row_number())
+    dplyr::arrange(
+      report_short_name,
+      dplyr::desc(download_dttm),
+      .by = report_short_name
+    ) |>
+    dplyr::mutate(
+      version = dplyr::row_number(),
+      .by = report_short_name
+    )
+
+  if (count_rows) {
+    fls <- fls |>
+      dplyr::mutate(
+        n_rows = purrr::map_int(
+          file,
+          \(x) readxl::read_xlsx(file.path(data_dir, x)) |>
+            nrow()
+        ),
+        .after = n_columns
+      )
+  }
 
   # Välj bara senaste versionen, ignorera i förekommande fall äldre versioner
   fls_use <- fls |>
@@ -119,7 +142,9 @@ find_rovbase_reports <- function(
     dplyr::arrange(report_nr)
 
   fls_old <- fls |>
-    dplyr::anti_join(fls_use, dplyr::join_by(file)) |>
+    dplyr::anti_join(
+      fls_use, dplyr::join_by(file)
+    ) |>
     dplyr::arrange(report_nr)
 
   # Filtrera metadata-tabellen om endast obligatoriska tabeller ska inkluderas
@@ -130,7 +155,7 @@ find_rovbase_reports <- function(
 
   cat(
     paste0(nrow(fls_use), " rapportfiler har hittats.\n")
-    )
+  )
 
   # Vilka rapporter är obligatoriska? Tala om för användaren vilka som finns,
   # om status är OK eller om det saknas filer, i så fall vilka!
@@ -170,7 +195,6 @@ find_rovbase_reports <- function(
   if (copy_files) {
 
     # OBS! Arbetsflödet med att namnge och flytta filer känns inte säkert ur datasäkerhetssynpunkt
-
     # Kopiera rapportfiler till mappen för 'senaste rapporter'
     # Observera att befintliga filer skrivs över!
     # Tanken är att inget arbete ska göras i själva Excel-filerna,
@@ -200,7 +224,12 @@ find_rovbase_reports <- function(
       rlang::set_names(fls_use$report_short_name)
     import_data
   } else {
-    fls_use |> dplyr::ungroup()
+    if (include_old_versions) {
+      dplyr::bind_rows(fls_use, fls_old) |>
+        dplyr::ungroup()
+    } else {
+      fls_use |> dplyr::ungroup()
+    }
   }
 
 }

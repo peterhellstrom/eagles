@@ -13,10 +13,10 @@ df_c <- function(
   .x |>
     dplyr::mutate(
       # dplyr::across(
-      #   tidyselect::everything(), \(x) na_if(x, "")
+      #   tidyselect::everything(), \(x) dplyr::na_if(x, "")
       # ),
       dplyr::across(
-        dplyr::where(is.character), \(x) na_if(x, "")
+        dplyr::where(is.character), \(x) dplyr::na_if(x, "")
       ),
       dplyr::across(
         tidyselect::everything(), \(x) tidyr::replace_na(as.character(x), "")

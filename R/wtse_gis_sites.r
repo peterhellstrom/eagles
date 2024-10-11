@@ -39,35 +39,41 @@ wtse_sites <- function(
 
   sites_sql <-
     "SELECT tLokaler.*,
-   luGeografiRegion.Region,
-   luGeografiLan.LanBokstav AS Lan,
-   luGeografiKommun.Kommun,
-   luGeografiLandskap.LandskapBokstav AS Landskap,
-   luGeografiDistrikt.Distrikt,
-   luGeografiRapportomrade.Rapportomrade,
-   luGeografiDelomrade.Delomrade
-   FROM (((((((tLokaler
-   LEFT JOIN luGeografiRegion ON tLokaler.RegionID = luGeografiRegion.RegionID)
-   LEFT JOIN luGeografiLan ON tLokaler.LanID = luGeografiLan.LanID)
-   LEFT JOIN luGeografiKommun ON tLokaler.KommunID = luGeografiKommun.KommunID)
-   LEFT JOIN luGeografiLandskap ON tLokaler.LandskapID = luGeografiLandskap.LandskapID)
-   LEFT JOIN luGeografiDistrikt ON tLokaler.DistriktID = luGeografiDistrikt.DistriktID)
-   LEFT JOIN luGeografiRapportomrade ON tLokaler.RapportomradeID = luGeografiRapportomrade.RapportomradeID)
-   LEFT JOIN luGeografiDelomrade ON tLokaler.DelomradeID = luGeografiDelomrade.DelomradeID)
-   ORDER BY tLokaler.LanID, tLokaler.Lokalkod"
+    luGeografiLivsmiljo.Livsmiljo,
+    luGeografiLandsdel.Landsdel,
+    luGeografiVattendistrikt.Vattendistrikt,
+    luGeografiRegion.Region,
+    luGeografiLan.LanBokstav AS Lan,
+    luGeografiKommun.Kommun,
+    luGeografiLandskap.LandskapBokstav AS Landskap,
+    luGeografiDistrikt.Distrikt,
+    luGeografiRapportomrade.Rapportomrade,
+    luGeografiDelomrade.Delomrade
+    FROM ((((((((((tLokaler
+    LEFT JOIN luGeografiRegion ON tLokaler.RegionID = luGeografiRegion.RegionID)
+    LEFT JOIN luGeografiLan ON tLokaler.LanID = luGeografiLan.LanID)
+    LEFT JOIN luGeografiKommun ON tLokaler.KommunID = luGeografiKommun.KommunID)
+    LEFT JOIN luGeografiLandskap ON tLokaler.LandskapID = luGeografiLandskap.LandskapID)
+    LEFT JOIN luGeografiDistrikt ON tLokaler.DistriktID = luGeografiDistrikt.DistriktID)
+    LEFT JOIN luGeografiRapportomrade ON tLokaler.RapportomradeID = luGeografiRapportomrade.RapportomradeID)
+    LEFT JOIN luGeografiDelomrade ON tLokaler.DelomradeID = luGeografiDelomrade.DelomradeID)
+    LEFT JOIN luGeografiLivsmiljo ON tLokaler.LivsmiljoID = luGeografiLivsmiljo.LivsmiljoID)
+    LEFT JOIN luGeografiLandsdel ON tLokaler.LandsdelID = luGeografiLandsdel.LandsdelID)
+    LEFT JOIN luGeografiVattendistrikt ON tLokaler.VattendistriktID = luGeografiVattendistrikt.VattendistriktID)
+  ORDER BY tLokaler.LanID, tLokaler.Lokalkod"
 
   sites <- DBI::dbGetQuery(con, sites_sql) |>
     tibble::as_tibble()
 
   # Re-format sites table
   sites <- sites |>
-    dplyr::relocate(Region:Delomrade, .after = LokalID) |>
+    dplyr::relocate(Livsmiljo:Delomrade, .after = LokalID) |>
     # Drop some non-essential columns (this step might change)
     dplyr::select(-Alias, -KommentarHemlig, -OrtnamnOsakert)
 
   if (drop_id_columns) {
     sites <- sites |>
-      dplyr::select(-c(LanID:DelomradeID))
+      dplyr::select(-c(StationID:DelomradeID))
   }
 
   if (add_subsites) {
