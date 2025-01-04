@@ -9,12 +9,14 @@ mean_geometric <- function(x, ...) exp(mean(log(x), ...))
 # See also: https://stats.stackexchange.com/questions/285173/how-to-calculate-confidence-interval-for-a-geometric-mean
 
 #' @export
-ci <- function(x,
-               type = c("geometric", "arithmetic", "harmonic"),
-               dist = c("t", "norm"),
-               alpha = 0.05,
-               range = FALSE,
-               na.rm = TRUE) {
+ci <- function(
+    x,
+    type = c("geometric", "arithmetic", "harmonic"),
+    dist = c("t", "norm"),
+    alpha = 0.05,
+    range = FALSE,
+    na.rm = TRUE
+) {
 
   type <- match.arg(type)
   dist <- match.arg(dist)
@@ -95,11 +97,13 @@ summary_geometric <- function(x, na.rm = TRUE, alpha = 0.05) {
   out <- data.frame(
     'n' = n,
     'mean_geometric' = exp(mean_log_x),
+    # This should be exp(sd(log(x))) ?
     'sd' = log_sd,
     'ci_lower' = cil[1],
     'ci_upper' = cil[2],
     'min' = min(x),
-    'max' = max(x))
+    'max' = max(x)
+  )
 
   out
 }

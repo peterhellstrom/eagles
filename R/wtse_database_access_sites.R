@@ -24,14 +24,18 @@ wtse_sites_get_access <- function(
   # View all sites in survey sub-areas ----
   all_sites <- DBI::dbGetQuery(
     con,
-    glue::glue("SELECT {area_field}, LokalID, Lokalkod, Lokalnamn FROM tLokaler WHERE {area_field} IN ({str_c(area_id, collapse = ',')}) ORDER BY {area_field}, Lokalkod")
+    glue::glue(
+      "SELECT {area_field}, LokalID, Lokalkod, Lokalnamn FROM tLokaler WHERE {area_field} IN ({str_c(area_id, collapse = ',')}) ORDER BY {area_field}, Lokalkod"
+    )
   ) |>
     tibble::as_tibble()
 
   # View all site codes listed for KontaktID ----
   all_sites_contact <- DBI::dbGetQuery(
     con,
-    glue::glue("SELECT * FROM tLokalerKontakter WHERE KontaktID IN ({kontakt_id})")
+    glue::glue(
+      "SELECT * FROM tLokalerKontakter WHERE KontaktID IN ({kontakt_id})"
+    )
   ) |>
     tibble::as_tibble()
 
@@ -48,14 +52,19 @@ wtse_sites_get_access <- function(
   #   print(n = Inf)
 
   has_access_not_in_set <- all_sites_contact |>
-    dplyr::anti_join(all_sites, dplyr::join_by(LokalID)) |>
+    dplyr::anti_join(
+      all_sites,
+      dplyr::join_by(LokalID)
+    ) |>
     dplyr::arrange(Lokalkod)
 
   str_sql_has_access <-
-    glue::glue("SELECT tLokaler.{area_field}, tLokaler.LokalID, tLokaler.Lokalkod, tLokaler.Lokalnamn, tLokalerKontakter.KontaktID, tLokalerKontakter.AnsvarID, tLokalerKontakter.Aktiv
+    glue::glue(
+      "SELECT tLokaler.{area_field}, tLokaler.LokalID, tLokaler.Lokalkod, tLokaler.Lokalnamn, tLokalerKontakter.KontaktID, tLokalerKontakter.AnsvarID, tLokalerKontakter.Aktiv
 FROM tLokaler INNER JOIN tLokalerKOntakter ON tLokaler.LokalID = tLokalerKontakter.Lokalid
 WHERE (((tLokaler.{area_field}) In ({str_c(area_id, collapse = ',')})) AND ((tLokalerKontakter.KontaktID)={str_c(kontakt_id, collapse = ',')}))
-ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;")
+ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;"
+    )
 
   has_access <- DBI::dbGetQuery(con, str_sql_has_access) |>
     tibble::as_tibble()
@@ -64,10 +73,12 @@ ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;")
   # as joining the full table tLokalerKontakter would look for NULL among
   # all contacts in table, not only the specified one(s).
   str_sql_has_no_access <-
-    glue::glue("SELECT tLokaler.{area_field}, tLokaler.LokalID, tLokaler.Lokalkod, tLokaler.Lokalnamn, b.KontaktID, b.AnsvarID, b.Aktiv
+    glue::glue(
+      "SELECT tLokaler.{area_field}, tLokaler.LokalID, tLokaler.Lokalkod, tLokaler.Lokalnamn, b.KontaktID, b.AnsvarID, b.Aktiv
 FROM tLokaler LEFT JOIN (SELECT * FROM tLokalerKontakter WHERE KontaktID IN ({str_c(kontakt_id, collapse = ',')})) AS b ON tLokaler.LokalID = b.Lokalid
 WHERE (((tLokaler.{area_field}) In ({str_c(area_id, collapse = ',')})) AND ((b.KontaktID) IS NULL))
-ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;")
+ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;"
+    )
 
   no_access <- DBI::dbGetQuery(con, str_sql_has_no_access) |>
     tibble::as_tibble()

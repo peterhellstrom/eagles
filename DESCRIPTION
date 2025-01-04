@@ -10,7 +10,7 @@ Depends:
     R (>= 2.10)
 Imports: 
     broom (>= 1.0.7),
-    data.table (>= 1.16.2),
+    data.table (>= 1.16.4),
     DBI (>= 1.2.3),
     dplyr (>= 1.1.4),
     getPass (>= 0.2.4),

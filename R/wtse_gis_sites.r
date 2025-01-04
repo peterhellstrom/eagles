@@ -67,7 +67,10 @@ wtse_sites <- function(
 
   # Re-format sites table
   sites <- sites |>
-    dplyr::relocate(Livsmiljo:Delomrade, .after = LokalID) |>
+    dplyr::relocate(
+      Livsmiljo:Delomrade,
+      .after = LokalID
+    ) |>
     # Drop some non-essential columns (this step might change)
     dplyr::select(-Alias, -KommentarHemlig, -OrtnamnOsakert)
 
@@ -79,6 +82,7 @@ wtse_sites <- function(
   if (add_subsites) {
     sites_sub <- DBI::dbReadTable(con, "tLokalerUnder") |>
       tibble::as_tibble()
+
     # Sub-sites, summarize to one row per main site.
     sites_sub_sum <- sites_sub |>
       dplyr::arrange(LokalID, LokalerUnderID) |>
@@ -115,7 +119,10 @@ wtse_sites <- function(
 
       sites_coords <- DBI::dbReadTable(con, "tLokalerOrtnamn") |>
         tibble::as_tibble() |>
-        sf::st_as_sf(coords = c("easting", "northing"), crs = 3006)
+        sf::st_as_sf(
+          coords = c("easting", "northing"),
+          crs = 3006
+        )
 
     } else {
       # message("Use spatial data in ortnamn GeoPackage")
@@ -143,7 +150,8 @@ wtse_sites <- function(
     sites <- sites |>
       dplyr::inner_join(
         sites_coords,
-        dplyr::join_by(Ortnamn_LOPNR == lopnr)) |>
+        dplyr::join_by(Ortnamn_LOPNR == lopnr)
+      ) |>
       sf::st_sf()
 
     if (add_coordinates) {
@@ -284,11 +292,11 @@ wtse_sites_subregion <- function() {
       LokalID, RegionID, KommunID
     ) |>
     dplyr::mutate(
-      SubRegion = region_from_kommun(
+      SubRegion = wtse_region_from_kommun(
         as.character(RegionID),
         KommunID
       ),
-      SubRegionText = reformat_region(SubRegion),
+      SubRegionText = wtse_region_reformat(SubRegion),
       SubRegionText0 = dplyr::case_when(
         str_detect(SubRegionText, "Eg. Östersjön") ~ "Eg. Östersjön",
         str_detect(SubRegionText, "Botten") ~ "Bottniska viken",

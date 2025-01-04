@@ -81,7 +81,8 @@ wtse_trend <- function(
     predict_newdata <- with(
       m$model,
       data.frame(
-        seq(min(m$model[,cn]), max(m$model[,cn]), length = npts))
+        seq(min(m$model[,cn]), max(m$model[,cn]), length = npts)
+      )
     )
   }
   names(predict_newdata) <- cn
@@ -97,7 +98,12 @@ wtse_trend <- function(
     # calculate first derivative of model
     model_deriv <- gratia::derivatives(model, n = npts)
 
-    S <- with(model_deriv, signifD(p, .derivative, .upper_ci, .lower_ci, eval = 0))
+    S <- with(
+      model_deriv,
+      signifD(
+        p, .derivative, .upper_ci, .lower_ci, eval = 0
+      )
+    )
 
   } else {
     cat("significance only available for gam or gamm objects fitted with mgcv", "\n")
@@ -106,39 +112,92 @@ wtse_trend <- function(
   # Create main plot of time series, if add=FALSE
   # if add=TRUE, the data is plotted in the currently active graphical device
   if (add == FALSE) {
-    plot(x, y, type = "n", bty = "l", main = main, xlab = xlab, ylab = ylab, ...)
+    plot(
+      x, y,
+      type = "n", bty = "l",
+      main = main,
+      xlab = xlab, ylab = ylab,
+      ...
+    )
   }
 
   if (ref_polygon) {
     plot.range <- par("usr")
     polygon(
-      x = c(plot.range[1], plot.range[1], plot.range[2], plot.range[2], plot.range[1]),
-      y = c(reference[1], reference[3], reference[3], reference[1], reference[1]),
+      x = c(
+        plot.range[1],
+        plot.range[1],
+        plot.range[2],
+        plot.range[2],
+        plot.range[1]
+      ),
+      y = c(
+        reference[1],
+        reference[3],
+        reference[3],
+        reference[1],
+        reference[1]
+      ),
       col = ref_polygon.col,
       border = NA
     )
   }
 
   if (ref_line) {
-    abline(h = reference, lty = ref_lty, lwd = ref_lwd, col = ref_col)
+    abline(
+      h = reference,
+      lty = ref_lty,
+      lwd = ref_lwd,
+      col = ref_col
+    )
   }
 
   if (add_line) {
-    lines(p ~ get(cn), data = predict_newdata, lty = trend_lty, lwd = trend_lwd, col = trend_col)
+    lines(
+      p ~ get(cn),
+      data = predict_newdata,
+      lty = trend_lty,
+      lwd = trend_lwd,
+      col = trend_col
+    )
     if (signif) {
-      lines(S$incr ~ get(cn), data = predict_newdata, lwd = signif_lwd, col = signif_col[2])
-      lines(S$decr ~ get(cn), data = predict_newdata, lwd = signif_lwd, col = signif_col[1])
+      lines(
+        S$incr ~ get(cn),
+        data = predict_newdata,
+        lwd = signif_lwd,
+        col = signif_col[2]
+      )
+      lines(
+        S$decr ~ get(cn),
+        data = predict_newdata,
+        lwd = signif_lwd,
+        col = signif_col[1]
+      )
     }
     if (ci) {
       lcl <- p_ci$fit - 1.96 * p_ci$se.fit
       ucl <- p_ci$fit + 1.96 * p_ci$se.fit
-      lines(lcl ~ get(cn), data = predict_newdata, lty=2)
-      lines(ucl ~ get(cn), data = predict_newdata, lty=2)
+      lines(
+        lcl ~ get(cn),
+        data = predict_newdata,
+        lty=2
+      )
+      lines(
+        ucl ~ get(cn),
+        data = predict_newdata,
+        lty=2
+      )
     }
   }
 
   if (add_points) {
-    points(y ~ x, pch = pch, col = pch_col, bg = pch_bg, cex = pch_cex)
+    points(
+      y ~ x,
+      pch = pch,
+      col = pch_col,
+      bg = pch_bg,
+      cex = pch_cex
+    )
   }
 }
 
