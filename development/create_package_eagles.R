@@ -97,6 +97,8 @@ library(eagles)
 usethis::use_data_raw()
 rc_species_list
 
+rc_species_list |> dplyr::filter(!is.na(StatVilt))
+
 # Test functions ----
 
 wtse_sites(add_monitoring = FALSE)
