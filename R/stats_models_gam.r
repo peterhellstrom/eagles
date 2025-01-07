@@ -26,7 +26,7 @@ gam_predict <- function(
     m,
     n_pts_predict = 100,
     output_format = "long"
-  ) {
+) {
 
   cn <- attr(m$terms , "term.labels")
 
@@ -41,6 +41,7 @@ gam_predict <- function(
     type = "response",
     se.fit = TRUE
   ) |>
+    as.data.frame() |>
     tibble::as_tibble() |>
     rlang::set_names(
       c("predict", "se.predict")
@@ -54,11 +55,11 @@ gam_predict <- function(
       mutate(
         incr = NA_real_,
         decr = NA_real_
-    )
+      )
 
   } else {
     # If a model with smoothing terms,
-    # e.g. y ~ s(x) is fitted to the data.
+    # e.g. y ~ s(x), is fitted to the data.
     S_deriv <- signifD(
       p[["predict"]],
       m_deriv$.derivative,
@@ -66,9 +67,14 @@ gam_predict <- function(
       m_deriv$.lower_ci,
       eval = 0
     ) |>
+      as.data.frame() |>
       tibble::as_tibble()
 
-    p <- dplyr::bind_cols(m_deriv, p, S_deriv)
+    p <- dplyr::bind_cols(
+      m_deriv,
+      p,
+      S_deriv
+    )
   }
 
   if (output_format == "long") {
@@ -86,7 +92,10 @@ gam_predict <- function(
         )
       ) |>
       dplyr::select(
-        all_of(cn), predict, se.predict, variable
+        tidyselect::all_of(cn),
+        predict,
+        se.predict,
+        variable
       )
 
     # p <- p |> dplyr::filter(!is.na(value))
@@ -134,7 +143,8 @@ geom_trend_gam <- function(
       "fit.decr", "fit.incr", "point"
     ),
     object,
-    n_pts_predict = 300
+    n_pts_predict = 300,
+    term_index = 1
 ) {
 
   p <- gam_predict(
@@ -145,8 +155,12 @@ geom_trend_gam <- function(
     dplyr::mutate(
       ymin = predict - 1.96 * se.predict,
       ymax = predict + 1.96 * se.predict
-    ) |>
+    )
+
+  p <- p |>
     as.data.frame()
+
+  x_term <- gratia::term_names(object)[[term_index]]
 
   # se.predict * qt(0.95 / 2 + .5, object$df.residual)
 
@@ -162,7 +176,7 @@ geom_trend_gam <- function(
 
   rect <- do.call(
     "geom_rect",
-    modifyList(
+    utils::modifyList(
       list(
         data = data.frame(
           xmin = -Inf,
@@ -170,7 +184,7 @@ geom_trend_gam <- function(
           ymin = 0.97,
           ymax = 1.75
         ),
-        mapping = aes(
+        mapping = ggplot2::aes(
           xmin = xmin,
           xmax = xmax,
           ymin = ymin,
@@ -186,11 +200,11 @@ geom_trend_gam <- function(
 
   ci <- do.call(
     "geom_ribbon",
-    modifyList(
+    utils::modifyList(
       list(
         data = p,
         mapping = aes(
-          p[,1],
+          get(x_term),
           ymin = ymin,
           ymax = ymax
         ),
@@ -198,28 +212,30 @@ geom_trend_gam <- function(
         alpha = 0.2,
         inherit.aes = FALSE
       ),
-      ci.params)
+      ci.params
+    )
   )
 
   hline <- do.call(
     "geom_hline",
-    modifyList(
+    utils::modifyList(
       list(
         yintercept = 1.31,
         linewidth = 1,
         color = "orange",
-        linetype = "dashed"),
+        linetype = "dashed"
+      ),
       hline.params
     )
   )
 
   fit <- do.call(
     "geom_line",
-    modifyList(
+    utils::modifyList(
       list(
         data = p,
         mapping = aes(
-          p[,1],
+          get(x_term),
           predict
         ),
         color = "darkgrey",
@@ -227,16 +243,17 @@ geom_trend_gam <- function(
         alpha = 1,
         na.rm = TRUE
       ),
-      fit.params)
+      fit.params
+    )
   )
 
   fit.decr <- do.call(
     "geom_line",
-    modifyList(
+    utils::modifyList(
       list(
         data = p,
         mapping = aes(
-          p[,1],
+          get(x_term),
           decr
         ),
         color = "red",
@@ -245,16 +262,17 @@ geom_trend_gam <- function(
         lineend = "round",
         na.rm = TRUE
       ),
-      fit.decr.params)
+      fit.decr.params
+    )
   )
 
   fit.incr <- do.call(
     "geom_line",
-    modifyList(
+    utils::modifyList(
       list(
         data = p,
         mapping = aes(
-          p[,1],
+          get(x_term),
           incr
         ),
         color = "blue",
@@ -263,7 +281,8 @@ geom_trend_gam <- function(
         lineend = "round",
         na.rm = TRUE
       ),
-      fit.incr.params)
+      fit.incr.params
+    )
   )
 
   point <- do.call(
@@ -277,7 +296,8 @@ geom_trend_gam <- function(
         alpha = 1,
         na.rm = TRUE
       ),
-      point.params)
+      point.params
+    )
   )
 
   all_items <- c(
@@ -329,15 +349,21 @@ plot_gam_fit_trends <- function(
 ) {
 
   obs_data <- object |>
-    unnest(cols = c( {{ group }} , data))
+    unnest(
+      cols = c( {{ group }} , data)
+    )
 
   if (missing(p_value_cutoff)) {
     pred_data <- object |>
-      unnest(cols = c( {{ group }}, s))
+      unnest(
+        cols = c( {{ group }}, s)
+      )
   } else {
     pred_data <- object |>
       filter(p.value < p_value_cutoff) |>
-      unnest(cols = c( {{ group }} , s))
+      unnest(
+        cols = c( {{ group }} , s)
+      )
   }
 
   f_group <- enquo(group)
@@ -347,7 +373,8 @@ plot_gam_fit_trends <- function(
       aes(
         x = {{x}},
         y = {{y}},
-        group = {{ group }} )
+        group = {{ group }}
+      )
     ) +
     geom_line(
       data = pred_data,

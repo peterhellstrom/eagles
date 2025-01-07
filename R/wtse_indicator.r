@@ -4,13 +4,13 @@
 #' @export
 calculate_indicator <- function(.data) {
 
-  if (dplyr::is_grouped_df(.data)) {
-    return(dplyr::do(.data, calculate_indicator(.)))
-  }
+  # if (dplyr::is_grouped_df(.data)) {
+  #   return(dplyr::do(.data, calculate_indicator(.)))
+  # }
 
   .data |>
     dplyr::mutate(
-      checked = rowSums(select(., grep("[0-3]", names(.)))),
+      checked = across(`0C`:`>=3`) |> rowSums(),
       unproductive = `0C` + `0G`,
       productive = checked - unproductive,
       prop_productive = productive / checked,
@@ -23,7 +23,8 @@ calculate_indicator <- function(.data) {
       productivity = prop_productive * brood_size_climbed,
       status = dplyr::if_else(
         productivity < 0.97 | brood_size_climbed < 1.64 | prop_productive < 0.59,
-        "sub-GES", "GES"
+        "sub-GES",
+        "GES"
       )
     )
 }
