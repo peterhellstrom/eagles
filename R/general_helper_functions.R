@@ -105,8 +105,16 @@ cut2 <- function(x, breaks = NULL, by = 5) {
 # prefix = "", suffix = "", quiet = TRUE)
 
 #' @export
-add_timestamp <- function(.x, sep = "_") {
-  stringr::str_c(.x, format(Sys.time(), glue::glue("%Y%m%d{sep}%H%M%S")), sep = sep)
+add_timestamp <- function(.x, sep = "_", suffix = NULL) {
+  out <- stringr::str_c(
+    .x,
+    format(Sys.time(), glue::glue("%Y%m%d{sep}%H%M%S")),
+    sep = sep
+  )
+  if (!is.null(suffix) | !is.na(suffix)) {
+    out <- stringr::str_c(out, suffix)
+  }
+  out
 }
 
 #' @export
