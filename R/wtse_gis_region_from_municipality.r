@@ -10,11 +10,16 @@
 # Lookup Subregion, based on given Region and Kommun
 # Kommun is given as kommunkod, NOT kommunnamn
 
-#' @param .region
+
+#' Title
 #'
+#' @param .region
 #' @param .kommun
 #'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_region_from_kommun <- function(.region, .kommun) {
 
   # Check if Region = 1 (Kust), then proceed to check if Kommun is any of the four in X-county
@@ -47,7 +52,14 @@ wtse_region_from_kommun <- function(.region, .kommun) {
 
 }
 
+#' Title
+#'
+#' @param x
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_region_reformat <- function(x) {
   dplyr::case_when(
     x == "S EgÖ" ~ "Eg. Östersjön, södra",

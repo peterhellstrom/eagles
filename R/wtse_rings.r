@@ -4,7 +4,15 @@
 # when more than 1000 rings were made yearly. Investigate and adapt
 # the function to allow for these years as well!
 
+#' Title
+#'
+#' @param country
+#' @param .v
+#'
+#' @return
 #' @export
+#'
+#' @examples
 proj_ring_gen <- function(
     country,
     .v = LETTERS[-c(9, 15, 17, 18, 21, 25)]) {
@@ -29,31 +37,45 @@ proj_ring_gen <- function(
   c(pt0, pt1, pt2, pt3)
 }
 
+
+#' Title
+#'
+#' @param .x
+#' @param .v
+#' @param seq_start
+#'
+#' @return
 #' @export
+#'
+#' @examples
 proj_ring_numeric <- function(
     .x,
     .v = LETTERS[-c(9, 15, 17, 18, 21, 25)],
-    seq_start = 1) {
+    seq_start = 1
+) {
 
-  #text_part <- str_replace_all(.x, "[:digit:]", "")
+  # text_part <- str_replace_all(.x, "[:digit:]", "")
   # Assume that first position ALWAYS is the country code,
   # so exclude str_sub(.x, 1, 1)
-  serial_part <- str_sub(.x, 2)
-  text_part <- str_extract(serial_part, paste0(.v, collapse = "|"))
-  num_part <- as.numeric(str_replace_all(.x, "[:alpha:]", ""))
+  serial_part <- stringr::str_sub(.x, 2)
+  text_part <- stringr::str_extract(serial_part, paste0(.v, collapse = "|"))
+  num_part <- as.numeric(stringr::str_replace_all(.x, "[:alpha:]", ""))
 
-  serial_num_part <- 100 * (match(text_part, .v) - 1)
-  serial_num_part <- replace_na(serial_num_part, 0) + num_part
+  serial_num_part <- 100 * (base::match(text_part, .v) - 1)
+  serial_num_part <- tidyr::replace_na(serial_num_part, 0) + num_part
 
-  .p <- str_locate_all(.x, "[:alpha:]")
-  .z <- map_chr(seq_along(.p), ~ str_c(.p[[.x]][,1], collapse = ""))
+  .p <- stringr::str_locate_all(.x, "[:alpha:]")
+  .z <- purrr::map_chr(
+    seq_along(.p), ~ stringr::str_c(.p[[.x]][,1], collapse = "")
+  )
 
-  text_num_part <- case_when(
+  text_num_part <- dplyr::case_when(
     .z == "1" ~ 0,
     .z == "13" ~ 1000,
     .z == "12" ~ 3000,
     .z == "14" ~ 5000,
-    TRUE ~ NA_real_)
+    TRUE ~ NA_real_
+  )
 
   (text_num_part + serial_num_part) + seq_start
 
@@ -61,23 +83,47 @@ proj_ring_numeric <- function(
 
 # Create lagged data set, and test if "previous row" is identical to
 # current.
+
+#' Title
+#'
+#' @param .x
+#' @param ...
+#' @param group_variable
+#'
+#' @return
 #' @export
+#'
+#' @examples
 add_ring_group <- function(.x, ..., group_variable = grp) {
-  .x %>%
-    group_by(...) %>%
-    mutate(
-      {{group_variable}} := cur_group_id()) %>%
-    ungroup() %>%
-    mutate(
-      {{group_variable}} := cumsum({{group_variable}} != lag({{group_variable}}, default = 1)) + 1)
+  .x |>
+    dplyr::group_by(...) |>
+    dplyr::mutate(
+      {{ group_variable }} := dplyr::cur_group_id()) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(
+      {{ group_variable }} :=
+        base::cumsum( {{ group_variable }} != dplyr::lag( {{ group_variable }}, default = 1)) + 1
+    )
 }
 
+#' Title
+#'
+#' @param .x
+#' @param ...
+#' @param ring
+#' @param group_variable
+#'
+#' @return
 #' @export
+#'
+#' @examples
 add_ring_group_by_number <- function(.x, ..., ring, group_variable = grp) {
-  .x %>%
-    group_by(...) %>%
-    mutate(
-      ring_series = str_sub({{ring}}, 1, 1),
-      ring_serial = parse_number({{ring}}),
-      {{group_variable}} := cumsum((ring_serial - lag(ring_serial, default = 1)) != 1))
+  .x |>
+    dplyr::group_by(...) |>
+    dplyr::mutate(
+      ring_series = stringr::str_sub( {{ring}} , 1, 1),
+      ring_serial = readr::parse_number( {{ ring }} ),
+      {{ group_variable }} :=
+        base::cumsum((ring_serial - dplyr::lag(ring_serial, default = 1)) != 1)
+    )
 }

@@ -2,7 +2,7 @@
 # devtools::install_github("r-lib/devtools")
 # devtools::install_github("r-lib/usethis")
 
-library(devtools) # can be added to .Rprofile startup file
+library(devtools)
 
 # p <- "W:/projects/R/eagles"
 # usethis::create_package(p, check_name = FALSE)
@@ -59,7 +59,6 @@ usethis::use_package("pdftools", min_version = TRUE)
 usethis::use_package("purrr", min_version = TRUE)
 usethis::use_package("readr", min_version = TRUE)
 usethis::use_package("readxl", min_version = TRUE)
-usethis::use_package("RJDBC", min_version = TRUE)
 usethis::use_package("rlang", min_version = TRUE)
 usethis::use_package("RODBC", min_version = TRUE)
 usethis::use_package("rstudioapi", min_version = TRUE)
@@ -79,6 +78,7 @@ usethis::use_dev_package("swecoords", remote = "github::peterhellstrom/swecoords
 
 # Suggests ----
 usethis::use_package("ggplot2", "Suggests")
+usethis::use_package("RJDBC", "Suggests")
 
 usethis::use_tidy_description()
 
@@ -97,8 +97,11 @@ library(eagles)
 usethis::use_data_raw()
 rc_species_list
 
-rc_species_list |> dplyr::filter(!is.na(StatVilt))
+rc_species_list |>
+  dplyr::filter(!is.na(StatVilt))
 
 # Test functions ----
 
 wtse_sites(add_monitoring = FALSE)
+
+add_timestamp("test", ".xlsx")

@@ -1,10 +1,22 @@
+#' Title
+#'
+#' @param .x
+#' @param sep
+#' @param .field
+#' @param .prefix
+#' @param remove
+#'
+#' @return
 #' @export
+#'
+#' @examples
 df_c <- function(
     .x,
     sep = "|",
     .field = data,
     .prefix = NULL,
-    remove = TRUE) {
+    remove = TRUE
+) {
 
   if (!is.null(.prefix)) {
     .prefix <- stringr::str_c(.prefix, sep)
@@ -39,7 +51,18 @@ df_c <- function(
 
 # ToDo: use stringr::str_unique() in this function
 
+#' Title
+#'
+#' @param .x
+#' @param collapse
+#' @param sort
+#' @param unique
+#' @param na.rm
+#'
+#' @return
 #' @export
+#'
+#' @examples
 str_c_unique <- function(
     .x, collapse = "; ", sort = FALSE,
     unique = TRUE, na.rm = TRUE) {

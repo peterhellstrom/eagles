@@ -1,6 +1,15 @@
-# Calculate geometric mean
+#' Title
+#'
+#' @param x
+#' @param ...
+#'
+#' @return
 #' @export
-mean_geometric <- function(x, ...) exp(mean(log(x), ...))
+#'
+#' @examples
+mean_geometric <- function(x, ...) {
+  exp(mean(log(x), ...))
+}
 
 # see discussion (and improvements to my simple function above) here:
 # https://stackoverflow.com/questions/2602583/geometric-mean-is-there-a-built-in
@@ -8,7 +17,20 @@ mean_geometric <- function(x, ...) exp(mean(log(x), ...))
 # Calculate geometric mean confidence interval
 # See also: https://stats.stackexchange.com/questions/285173/how-to-calculate-confidence-interval-for-a-geometric-mean
 
+
+#' Title
+#'
+#' @param x
+#' @param type
+#' @param dist
+#' @param alpha
+#' @param range
+#' @param na.rm
+#'
+#' @return
 #' @export
+#'
+#' @examples
 ci <- function(
     x,
     type = c("geometric", "arithmetic", "harmonic"),
@@ -71,7 +93,16 @@ ci <- function(
   }
 }
 
+#' Title
+#'
+#' @param x
+#' @param na.rm
+#' @param alpha
+#'
+#' @return
 #' @export
+#'
+#' @examples
 summary_geometric <- function(x, na.rm = TRUE, alpha = 0.05) {
 
   # remove NA-values if argument na.rm = TRUE
@@ -108,7 +139,15 @@ summary_geometric <- function(x, na.rm = TRUE, alpha = 0.05) {
   out
 }
 
+#' Title
+#'
+#' @param x
+#' @param na.rm
+#'
+#' @return
 #' @export
+#'
+#' @examples
 summary2 <- function(x, na.rm = TRUE) {
 
   if (na.rm) x <- x[!is.na(x)]

@@ -1,4 +1,14 @@
+#' Title
+#'
+#' @param .x
+#' @param .grid
+#' @param type
+#' @param position
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_sites_grid <- function(
     .x,
     .grid,

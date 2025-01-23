@@ -1,9 +1,18 @@
 # Note that the admin_areas_load() and admin_areas_join() functions
 # have been generalized in st_join_n() and st_join_n_loop().
 
+#' Title
+#'
+#' @param db
+#' @param layer
+#' @param import_to_sf
+#'
+#' @return
 #' @export
+#'
+#' @examples
 admin_areas_load <- function(
-    db = "E:/Maps/Naturvard/Naturvard.gpkg",
+    db = Sys.getenv("gpkg_naturvard"),
     layer = c(
       "admin_kommun_fastk",
       "admin_lan_fastk",
@@ -27,7 +36,7 @@ admin_areas_load <- function(
     layer,
     \(x, y) base::assign(
       x,
-      # sf::st_read(dsn = db, layer = y, quiet = TRUE),
+      # sf::read_sf(dsn = db, layer = y, quiet = TRUE),
       sf::read_sf(dsn = db, layer = y),
       envir = .GlobalEnv
     )
@@ -39,7 +48,20 @@ admin_areas_load <- function(
 # This will result in the following error
 # Error in dplyr::select(lan, LanID = lankod) :
 # promise already under evaluation: recursive default argument reference or earlier problems?
+
+#' Title
+#'
+#' @param .x
+#' @param lan_sf
+#' @param kommun_sf
+#' @param distrikt_sf
+#' @param rapportomrade_sf
+#' @param id
+#'
+#' @return
 #' @export
+#'
+#' @examples
 admin_areas_join <- function(
     .x,
     lan_sf = lan,
@@ -94,7 +116,24 @@ admin_areas_join <- function(
   xy_join
 }
 
+#' Title
+#'
+#' @param .x
+#' @param .y
+#' @param .x_group
+#' @param .y_ID
+#' @param .y_NAME
+#' @param OmradeTypID
+#' @param MetodAvstand
+#' @param Metod
+#' @param MetodAndelArea
+#' @param left
+#' @param geometry_field
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_join_areas <- function(
     .x,
     .y,

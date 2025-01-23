@@ -1,7 +1,14 @@
 # NOTE: The new variable `>0` is ignored in the indicator function below.
 # Should be updated!
 
+#' Title
+#'
+#' @param .data
+#'
+#' @return
 #' @export
+#'
+#' @examples
 calculate_indicator <- function(.data) {
 
   # if (dplyr::is_grouped_df(.data)) {
@@ -30,7 +37,15 @@ calculate_indicator <- function(.data) {
 }
 
 # GAM-models for WTSE-data
+
+#' Title
+#'
+#' @param df
+#'
+#' @return
 #' @export
+#'
+#' @examples
 gam_prop_productive <- function(df) {
   mgcv::gam(
     cbind(productive, unproductive) ~ s(Year, bs = "cs", k = -1),
@@ -40,7 +55,14 @@ gam_prop_productive <- function(df) {
   )
 }
 
+#' Title
+#'
+#' @param df
+#'
+#' @return
 #' @export
+#'
+#' @examples
 gam_brood_size <- function(df) {
   mgcv::gam(
     brood_size_climbed ~ s(Year, bs = "cs", k = -1),
@@ -50,7 +72,14 @@ gam_brood_size <- function(df) {
   )
 }
 
+#' Title
+#'
+#' @param df
+#'
+#' @return
 #' @export
+#'
+#' @examples
 gam_productivity <- function(df) {
   mgcv::gam(
     productivity ~ s(Year, bs = "cs", k = -1),
@@ -60,13 +89,21 @@ gam_productivity <- function(df) {
   )
 }
 
-
 # .x = data.frame with data, columns names of data frame matches possible breeding outcomes,
 # as defined by outcomes which must be a factor with "correct" order of levels
 # n_boot = Number of bootstrap samples.
 # This is a non-parametric bootstrap approach, sample with replacement
 
+#' Title
+#'
+#' @param .x
+#' @param outcomes
+#' @param n_boot
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_boot <- function(
     .x,
     outcomes = c("0C", "1", "2", "3", "0G", ">0", ">=1", ">=2", ">=3"),
@@ -88,7 +125,18 @@ wtse_boot <- function(
   out
 }
 
+#' Title
+#'
+#' @param dd
+#' @param stats.brood
+#' @param bootstrap.brood
+#' @param n.boot
+#' @param replace
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_productivity <- function(
     dd,
     stats.brood = TRUE,
@@ -143,7 +191,21 @@ wtse_productivity <- function(
 }
 
 # Brood size, batches with 25 = set size to 25 in sample(x.bs, size=25, replace=TRUE)
+
+#' Title
+#'
+#' @param x
+#' @param n.boot
+#' @param q
+#' @param min
+#' @param size
+#' @param replace
+#' @param plot
+#'
+#' @return
 #' @export
+#'
+#' @examples
 brood_size_boot <- function(
     x = c(24, 58, 9),
     n.boot = 10000,

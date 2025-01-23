@@ -23,7 +23,14 @@ month_switch <- function(month) {
     "december" = 12)
 }
 
+#' Title
+#'
+#' @param x
+#'
+#' @return
 #' @export
+#'
+#' @examples
 reshape_species_year <- function(x) {
 
   names_x <- names(x)
@@ -42,7 +49,16 @@ reshape_species_year <- function(x) {
 
 }
 
+#' Title
+#'
+#' @param species
+#' @param year
+#' @param convert_date
+#'
+#' @return
 #' @export
+#'
+#' @examples
 falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 
   url <- glue::glue(
@@ -74,8 +90,15 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
     dplyr::filter(!is.na(day) & !is.na(date))
 }
 
-# Q: Deal with 0 and NA?
+#' Title
+#'
+#' @param species
+#' @param replace_na
+#'
+#' @return
 #' @export
+#'
+#' @examples
 falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 
   url <- glue::glue(
@@ -113,7 +136,14 @@ falsterbo_species_all_years <- function(species, replace_na = TRUE) {
   x
 }
 
+#' Title
+#'
+#' @param year
+#'
+#' @return
 #' @export
+#'
+#' @examples
 falsterbo_year <- function(year) {
 
   url <- glue::glue(

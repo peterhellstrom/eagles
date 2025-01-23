@@ -1,5 +1,14 @@
 # Format site codes to common format
+
+#' Title
+#'
+#' @param .x
+#' @param pattern
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_sites_str <- function(.x, pattern = "([0-9]{1,3})") {
   .x |>
     # remove all spaces
@@ -7,14 +16,22 @@ wtse_sites_str <- function(.x, pattern = "([0-9]{1,3})") {
     # Extract and pad numeric part
     stringr::str_replace_all(
       pattern,
-      \(x) stringr::str_pad(x, width = 3, pad = "0")) |>
+      \(x) stringr::str_pad(x, width = 3, pad = "0")
+    ) |>
     # remove any trailing inland "i"
     stringr::str_replace("([i]{1}$)", "") |>
     stringr::str_to_upper() |>
     stringr::str_trim()
 }
 
+#' Title
+#'
+#' @param .x
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_sites_str_old <- function(.x) {
   .x |>
     stringr::str_replace_all("[[:blank:]]", "") |>
@@ -22,7 +39,8 @@ wtse_sites_str_old <- function(.x) {
     stringr::str_remove_all("^0+(?!$|([A-Za-z]{1}))") |>
     stringr::str_replace_all("\\/0+", "/") |>
     stringr::str_c(
-      stringr::str_sub(.x, 1, 1), ...=_)
+      stringr::str_sub(.x, 1, 1), ...=_
+    )
 }
 
 # x <- tibble::tibble(lokalkod = c("E2/4", " H7b   ", "C98i", "C98 i", "C9 8 i", "C3B2", "X4", "X004", "x4b", "X4b", "C3/15"))

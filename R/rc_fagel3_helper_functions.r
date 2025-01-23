@@ -1,9 +1,21 @@
+#' Title
+#'
+#' @param .x
+#' @param pattern
+#' @param width
+#' @param side
+#' @param pad
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_parse_ring <- function(
     .x, pattern = "[a-zA-Z]+",
     width = 8,
     side = "left",
-    pad = " ") {
+    pad = " "
+) {
 
   series <- stringr::str_extract(.x, pattern) |>
     stringr::str_trim()
@@ -34,7 +46,21 @@ rc_parse_ring <- function(
 
 # rc_parse_ring(c("N5431", "E21003", "9158957", "N543A", "ABX333", "N 2310"))
 
+#' Title
+#'
+#' @param latitude
+#' @param longitude
+#' @param outformat
+#' @param pad_output
+#' @param width
+#' @param pad
+#' @param side
+#' @param sep
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_coords <- function(
     latitude,
     longitude,
@@ -92,7 +118,15 @@ rc_coords <- function(
 #     )
 #   )
 
+#' Title
+#'
+#' @param x
+#' @param direction
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
 
   direction <- match.arg(direction)
@@ -114,8 +148,20 @@ rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
 # rc_fagel3_county_code(c("AC", "BD", "G", "AB", "NY"), "to")
 # rc_fagel3_county_code(c("1", "2", "3", "4", "B", "C", "Å"), "from")
 
-#' @export
+
 # Funktion som skapar ringnummer
+
+#' Title
+#'
+#' @param series
+#' @param start
+#' @param n
+#' @param rc_format
+#'
+#' @return
+#' @export
+#'
+#' @examples
 rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
   if (rc_format) {
     sprintf(
@@ -136,7 +182,18 @@ rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
 # stringr::str_c("N", stringr::str_pad(tidyr::full_seq(c(9900, 9925), 1), width = 7, pad = " "))
 # glue::glue("N{stringr::str_pad(tidyr::full_seq(c(9900, 9925), 1), width = 7, pad = ' ')}")
 
+#' Title
+#'
+#' @param letter_start
+#' @param num_start
+#' @param num_end
+#' @param width
+#' @param pad
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_ring_seq <- function(
     letter_start, num_start, num_end,
     width = 4, pad = "0") {
@@ -146,7 +203,15 @@ rc_ring_seq <- function(
   )
 }
 
+#' Title
+#'
+#' @param .color2
+#' @param .ring
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_get_central <- function(.color2, .ring) {
 
   .first_pos <- stringr::str_sub({{ .ring }}, 1, 1)
@@ -166,7 +231,21 @@ rc_get_central <- function(.color2, .ring) {
 # tibble(Ring = c("N   6412", "P   8125"), Color2 = c("grön", "ALU")) |>
 #   mutate(Central = rc_get_central(Color2, Ring))
 
+
+#' Title
+#'
+#' @param access_file
+#' @param sql_expr
+#' @param clean_spaces
+#' @param clean_names
+#' @param date_transform
+#' @param package
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_import_from_db <- function(
     access_file,
     sql_expr,
@@ -174,7 +253,8 @@ rc_import_from_db <- function(
     clean_names = TRUE,
     date_transform = TRUE,
     package = c("DBI", "RODBC"),
-    ...) {
+    ...
+) {
 
   package <- match.arg(package)
 
@@ -184,9 +264,9 @@ rc_import_from_db <- function(
 
   if (date_transform) {
     x <- x |>
-      mutate(
-        across(
-          where(is.POSIXct), \(d) lubridate::ymd(str_sub(d, 1, 10))
+      dplyr::mutate(
+        dplyr::across(
+          tidyselect::where(is.POSIXct), \(d) lubridate::ymd(str_sub(d, 1, 10))
         )
       )
   }
@@ -198,7 +278,7 @@ rc_import_from_db <- function(
       #     Ring, regex("\\s*"), "")
       # )
       dplyr::mutate(
-        across(
+        dplyr::across(
           {{ clean_spaces }},
           \(col) stringi::stri_replace_all_charclass(col, "\\p{WHITE_SPACE}", "")
         )
@@ -214,7 +294,17 @@ rc_import_from_db <- function(
 }
 
 # To do: Add (optional) groups for seconds (and rename function to a more general name)
+
+#' Title
+#'
+#' @param .x
+#' @param pattern
+#' @param col_names
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_parse_province_midpt <- function(
     .x,
     pattern = "(?<latd>[0-9]{2})(?<latm>[0-9]{2})(?<lath>[A-Z]{1})(?<lond>[0-9 ]+)(?<lonm>[0-9]{2})(?<lonh>[A-Z]{1})",
@@ -226,14 +316,15 @@ rc_parse_province_midpt <- function(
     dplyr::rename("text_dm" = "V1") |>
     dplyr::mutate(
       dplyr::across(c(latd:latm, lond:lonm), as.integer),
-      lat_dd = latd + latm/60,
-      lon_dd = lond + lonm/60
+      lat_dd = latd + latm / 60,
+      lon_dd = lond + lonm / 60
     ) |>
     dplyr::mutate(
       lat_dd = dplyr::case_when(
         lath == "S" ~ -lat_dd,
         lath == "N" ~ lat_dd,
-        TRUE ~ NA_real_),
+        TRUE ~ NA_real_
+      ),
       lon_dd = dplyr::case_when(
         lonh == "W" ~ -lon_dd,
         lonh == "E" ~ lon_dd,
@@ -263,7 +354,25 @@ rc_parse_province_midpt <- function(
 # R = Ringon
 # E = Ringar
 
+
+#' Title
+#'
+#' @param mnr
+#' @param year_filter
+#' @param .markare
+#' @param .medhjalpare
+#' @param .signaturer
+#' @param .lokaler
+#' @param .kontr
+#' @param .kullar
+#' @param .ringon
+#' @param .ringar
+#' @param export
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_fagel3_report_file <- function(
     mnr = 0658,
     year_filter = 2022,
@@ -334,7 +443,8 @@ rc_fagel3_report_file <- function(
             slut == 1 ~ "True",
             TRUE ~ "False")
         ),
-      .prefix = "E"))
+      .prefix = "E")
+  )
 
   if (export) {
     out_file <- glue::glue("{mnr}år-{year_filter}")

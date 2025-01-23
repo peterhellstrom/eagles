@@ -31,7 +31,18 @@
 # the function wtse_vars() to fail. The empty tibble
 # is used with bind_columns together with the tibble containing the actual data.
 
+
+#' Title
+#'
+#' @param dsn
+#' @param table
+#' @param column
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_columns <- function (
     dsn = "Havsorn",
     table = "luOvervakningUtfall",
@@ -55,7 +66,19 @@ wtse_columns <- function (
 # use the the right_join + complete method to ensure that all (factor) levels
 # of UtfallR (or other response variable) actually are included in the data
 
+
+#' Title
+#'
+#' @param .data
+#' @param ...
+#' @param .response
+#' @param .columns
+#' @param .drop
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_transform <- function(
     .data,
     ...,
@@ -90,7 +113,16 @@ wtse_transform <- function(
 # Två varianter: Räkna årsposter, eller från lokal-tabellens Första år
 # OBS! Även ej inventerade revir bör inkluderas
 
+
+#' Title
+#'
+#' @param .data
+#' @param clean_names
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_vars <- function(
     .data,
     clean_names = FALSE
@@ -125,7 +157,16 @@ wtse_vars <- function(
 # I had re-written the function based on dplyr::case_when statements.
 # But it was confirmed that code is much faster in R 4.1.3. It is the case_when
 # statements that causes trouble.
+
+#' Title
+#'
+#' @param .data
+#' @param .by_column
+#'
+#' @return
 #' @export
+#'
+#' @examples
 monitoring_summary <- function(
     .data,
     .by_column = LokalID
@@ -155,7 +196,17 @@ monitoring_summary <- function(
     )
 }
 
+#' Title
+#'
+#' @param .data
+#' @param ...
+#' @param .columns
+#' @param .remove
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_sum <- function(
     .data,
     ...,

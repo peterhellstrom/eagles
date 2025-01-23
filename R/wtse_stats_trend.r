@@ -18,7 +18,44 @@
 # main = , xlab = , ylab =
 # ... optional arguments can be passed to main plot
 
+
+#' Title
+#'
+#' @param y
+#' @param x
+#' @param model
+#' @param reference
+#' @param npts
+#' @param alpha
+#' @param pch
+#' @param pch_col
+#' @param pch_bg
+#' @param pch_cex
+#' @param add
+#' @param add_points
+#' @param add_line
+#' @param ref_line
+#' @param ref_col
+#' @param ref_lty
+#' @param ref_lwd
+#' @param ref_polygon
+#' @param ref_polygon.col
+#' @param trend_col
+#' @param trend_lty
+#' @param trend_lwd
+#' @param signif
+#' @param signif_lwd
+#' @param signif_col
+#' @param ci
+#' @param main
+#' @param xlab
+#' @param ylab
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_trend <- function(
     y, x,
     model,

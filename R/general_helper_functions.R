@@ -1,7 +1,16 @@
 # https://stackoverflow.com/questions/6461209/how-to-round-up-to-the-nearest-10-or-100-or-x
 # https://stackoverflow.com/questions/43627679/round-any-equivalent-for-dplyr/46489816#46489816
 
+#' Title
+#'
+#' @param .x
+#' @param .accuracy
+#' @param f
+#'
+#' @return
 #' @export
+#'
+#' @examples
 round_any <- function(.x, .accuracy, f = round) {
   f(.x / .accuracy) * .accuracy
 }
@@ -17,7 +26,16 @@ round_up <- function(.x) {
   return(out)
 }
 
+#' Title
+#'
+#' @param x
+#' @param round_to
+#' @param dir
+#'
+#' @return
 #' @export
+#'
+#' @examples
 round_choose <- function(x, round_to, dir = c("up", "down")) {
   if(dir == "up") {
     x + (round_to - x %% round_to)
@@ -28,7 +46,15 @@ round_choose <- function(x, round_to, dir = c("up", "down")) {
   }
 }
 
+#' Title
+#'
+#' @param vec
+#' @param fun
+#'
+#' @return
 #' @export
+#'
+#' @examples
 my_min_max <- function(vec, fun = max) {
   ifelse(length(vec[!is.na(vec)]) == 0, NA_real_, fun(vec, na.rm = TRUE))
 }
@@ -36,21 +62,47 @@ my_min_max <- function(vec, fun = max) {
 # my_min_max(c(1, NA, NA, 3), max)
 # my_min_max(c(1, NA, NA, 3), min)
 
+
+#' Title
+#'
+#' @param .x
+#'
+#' @return
 #' @export
+#'
+#' @examples
 get_digits <- function(.x) {
   floor(log10(.x)) + 1
 }
 
-# get_member can be replacved by stringr::str_split_i()
+# get_member can be replaced by stringr::str_split_i()
+
+#' Title
+#'
+#' @param .x
+#' @param sep
+#' @param pos
+#'
+#' @return
 #' @export
+#'
+#' @examples
 get_member <- function(.x, sep = ",", pos = 1) {
-  sapply(strsplit(.x, sep), '[', pos)
+  # sapply(strsplit(.x, sep), '[', pos)
 }
 
-#' @export
 # chec fs::fs_bytes() as an alternative!
 # # https://stackoverflow.com/questions/63543853/how-can-we-get-the-formated-file-size-in-kb-mb-gb-tb-in-r
 # https://stackoverflow.com/questions/10910688/converting-kilobytes-megabytes-etc-to-bytes-in-r
+
+#' Title
+#'
+#' @param x
+#'
+#' @return
+#' @export
+#'
+#' @examples
 convert_bytes <- function(x) {
   ptn <- "(\\d*(.\\d+)*)(.*)"
   num  <- as.numeric(sub(ptn, "\\1", x))
@@ -61,7 +113,14 @@ convert_bytes <- function(x) {
   num * unname(mult[unit])
 }
 
+#' Title
+#'
+#' @param x
+#'
+#' @return
 #' @export
+#'
+#' @examples
 asc <- function(x) {
   strtoi(charToRaw(x), 16L)
 }
@@ -71,18 +130,39 @@ asc <- function(x) {
 # Uses cut to generate bins, must use option right = FALSE!
 # Q: Does this work as intended if the vector x
 # has gaps (like missing one or two "years" in a sequence)?
-#' @export
-lbl_breaks <- function(x) paste(x[-length(x)], x[-1] - 1, sep = "-")
 
+#' Title
+#'
+#' @param x
+#'
+#' @return
 #' @export
+#'
+#' @examples
+lbl_breaks <- function(x) {
+  paste(x[-length(x)], x[-1] - 1, sep = "-")
+}
+
+#' Title
+#'
+#' @param x
+#' @param breaks
+#' @param by
+#'
+#' @return
+#' @export
+#'
+#' @examples
 cut2 <- function(x, breaks = NULL, by = 5) {
 
   if (is.null(breaks)) {
     breaks <- seq(from = min(x), to = max(x), by = by)
   }
 
-  base::cut(x = x, breaks = breaks, labels = lbl_breaks(breaks),
-            right = FALSE)
+  base::cut(
+    x = x, breaks = breaks, labels = lbl_breaks(breaks),
+    right = FALSE
+  )
 
   # Start developing another approach, usinge the unexposed breaks function
   # br <- ggplot2:::breaks(x, "width", nbins = NULL, binwidth = by)
@@ -104,20 +184,37 @@ cut2 <- function(x, breaks = NULL, by = 5) {
 # utils::timestamp(stamp = format(Sys.time(), "%Y%m%d_%H%M%S"),
 # prefix = "", suffix = "", quiet = TRUE)
 
+#' Title
+#'
+#' @param .x
+#' @param suffix
+#' @param sep
+#'
+#' @return
 #' @export
-add_timestamp <- function(.x, sep = "_", suffix = NULL) {
+#'
+#' @examples
+add_timestamp <- function(.x, suffix = NULL, sep = "_") {
   out <- stringr::str_c(
     .x,
     format(Sys.time(), glue::glue("%Y%m%d{sep}%H%M%S")),
     sep = sep
   )
-  if (!is.null(suffix) | !is.na(suffix)) {
+  if (!is.null(suffix)) {
     out <- stringr::str_c(out, suffix)
   }
   out
 }
 
+#' Title
+#'
+#' @param .out
+#' @param .data
+#'
+#' @return
 #' @export
+#'
+#' @examples
 sink_cat <- function(.out, .data) {
   sink(.out)
   cat(.data)
@@ -125,14 +222,30 @@ sink_cat <- function(.out, .data) {
 }
 
 # Hjälpfunktion för att testa om ett värde finns i en vektor
+
+#' Title
+#'
+#' @param x
+#' @param match_value
+#'
+#' @return
 #' @export
+#'
+#' @examples
 has_field_name <- function(x, match_value) {
   !all(is.na(match(x, match_value)))
 }
 #has_field_name(LETTERS, "W") # returnerar TRUE
 #has_field_name(LETTERS[1:5], "W") # returnerar FALSE
 
+#' Title
+#'
+#' @param i
+#'
+#' @return
 #' @export
+#'
+#' @examples
 extend <- function(alphabet) function(i) {
   base10toA <- function(n, A) {
     stopifnot(n >= 0L)
@@ -143,7 +256,15 @@ extend <- function(alphabet) function(i) {
   vapply(i-1L, base10toA, character(1L), alphabet)
 }
 
+#' Title
+#'
+#' @param .files
+#' @param .columns
+#'
+#' @return
 #' @export
+#'
+#' @examples
 pdf_page_count <- function(.files, .columns = c("pages", "created")) {
   purrr::map_dfr(
     .files,
@@ -153,18 +274,29 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 
 
 # Konvertera logiska fält från text [Ja/Nej] till TRUE/FALSE
+
+#' Title
+#'
+#' @param .x
+#' @param cols
+#' @param yes_value
+#' @param no_value
+#'
+#' @return
 #' @export
+#'
+#' @examples
 convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
   .x |>
     dplyr::mutate(
-      dplyr::across({{cols}}, \(x) dplyr::case_when(
+      dplyr::across( {{ cols }} , \(x) dplyr::case_when(
         x %in% yes_value ~ TRUE,
         x %in% no_value ~ FALSE,
         TRUE ~ NA)
       )
     ) |>
     dplyr::mutate(
-      dplyr::across({{cols}}, as.logical)
+      dplyr::across( {{ cols }} , as.logical)
     )
 }
 
@@ -173,14 +305,27 @@ convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
 # Tänkt användning: ersätt "Ja" med kolumnnamnet och sätt Nej till NA
 # Två varianter av funktionen, den första använder ifelse och där finns
 # även möjligheten att ange vilka värden som motsvarar Ja och Nej
+
+#' Title
+#'
+#' @param .x
+#' @param cols
+#' @param yes_value
+#' @param no_value
+#'
+#' @return
 #' @export
+#'
+#' @examples
 colname_to_value <- function(.x, cols, yes_value = TRUE, no_value = NA) {
   .x |>
     dplyr::mutate(
-      dplyr::across({{cols}}, as.character),
+      dplyr::across( {{ cols }} , as.character),
       dplyr::across(
-        {{cols}},
-        \(x) dplyr::if_else(x %in% yes_value, dplyr::cur_column(), no_value)
+        {{ cols }},
+        \(x) dplyr::if_else(
+          x %in% yes_value, dplyr::cur_column(), no_value
+        )
       )
     )
 }
@@ -197,7 +342,16 @@ colname_to_value <- function(.x, cols, yes_value = TRUE, no_value = NA) {
 
 # den andra varianten använder case_when och förutsätter att datavärden
 # i kolumnerna som anges med argumentet cols är TRUE/FALSE (dvs. logical).
+
+#' Title
+#'
+#' @param .x
+#' @param cols
+#'
+#' @return
 #' @export
+#'
+#' @examples
 colname_to_value2 <- function(.x, cols) {
   cols <- enquo(cols)
   .x %>%
@@ -214,7 +368,17 @@ colname_to_value2 <- function(.x, cols) {
     )
 }
 
+#' Title
+#'
+#' @param .x
+#' @param .data
+#' @param .vars
+#' @param .fn
+#'
+#' @return
 #' @export
+#'
+#' @examples
 sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
   .x %>%
     purrr::map(
@@ -225,7 +389,16 @@ sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
     dplyr::bind_rows()
 }
 
+#' Title
+#'
+#' @param .x
+#' @param .var
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 add_wt <- function(.x, .var, ...) {
   .x |>
     dplyr::select( {{.var }}, ...) |>
@@ -235,7 +408,24 @@ add_wt <- function(.x, .var, ...) {
     dplyr::arrange( {{.var}} )
 }
 
+#' Title
+#'
+#' @param wd
+#' @param folder
+#' @param files
+#' @param files_url
+#' @param file_type
+#' @param files_unzip
+#' @param delete_zip
+#' @param junkpaths
+#' @param overwrite
+#' @param add_date
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 download_zip <- function(
     wd, folder,
     files, files_url,

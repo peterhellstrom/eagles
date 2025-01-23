@@ -1,4 +1,14 @@
+#' Title
+#'
+#' @param pattern
+#' @param path_pattern
+#' @param fixed
+#' @param markers
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_data_search_txt <- function(
     pattern,
     path_pattern = ".*RCdata\\.txt$",
@@ -16,7 +26,19 @@ rc_data_search_txt <- function(
 
 }
 
+#' Title
+#'
+#' @param species_code
+#' @param year
+#' @param pattern_sites
+#' @param fixed
+#' @param markers
+#' @param empty_ringondb
+#'
+#' @return
 #' @export
+#'
+#' @examples
 rc_ringon_search_txt <- function (
     species_code,
     year = NULL,

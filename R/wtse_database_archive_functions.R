@@ -1,9 +1,28 @@
+#' Title
+#'
+#' @param k_id
+#' @param v_id
+#'
+#' @return
 #' @export
+#'
+#' @examples
 get_dir_path <- function(k_id, v_id) {
   sprintf('k%02d/v%04d', k_id, v_id)
 }
 
+#' Title
+#'
+#' @param k_id
+#' @param v_id
+#' @param b_id
+#' @param sep
+#' @param file_extension
+#'
+#' @return
 #' @export
+#'
+#' @examples
 set_file_name <- function(
     k_id,
     v_id,
@@ -17,7 +36,18 @@ set_file_name <- function(
   )
 }
 
+#' Title
+#'
+#' @param db_dir_base
+#' @param db_dir_path
+#' @param pattern
+#' @param start
+#' @param end
+#'
+#' @return
 #' @export
+#'
+#' @examples
 get_seq_start <- function(
     db_dir_base,
     db_dir_path,
@@ -67,7 +97,22 @@ get_seq_start <- function(
 #   \(x) get_seq_start(db_dir_base, x)
 # )
 
+#' Title
+#'
+#' @param input_dir
+#' @param db_dir_base
+#' @param k_id
+#' @param v_id
+#' @param seq_start
+#' @param overwrite
+#' @param execute
+#' @param sep
+#' @param file_extension
+#'
+#' @return
 #' @export
+#'
+#' @examples
 db_copy_new_files <- function(
     input_dir, db_dir_base,
     k_id, v_id,
@@ -75,7 +120,8 @@ db_copy_new_files <- function(
     overwrite = FALSE,
     execute = TRUE,
     sep = ".",
-    pattern = ".jpg") {
+    file_extension = ".jpg"
+) {
 
   # List files in input directory
   x <- list.files(path = input_dir, pattern = pattern, full.names = TRUE)
@@ -84,7 +130,7 @@ db_copy_new_files <- function(
   # Create new file names
   x_new <- set_file_name(
     k_id = k_id, v_id = v_id, b_id = b_id,
-    sep = sep, pattern = pattern
+    sep = sep, file_extension = file_extension
   )
   # Rename existing files in input directory
   x_new <- file.path(input_dir, x_new)
@@ -122,7 +168,25 @@ db_copy_new_files <- function(
   )
 }
 
+#' Title
+#'
+#' @param k_id
+#' @param v_id
+#' @param seq_start
+#' @param observer_id
+#' @param observer_text
+#' @param data_type_id
+#' @param document_type_id
+#' @param time_text
+#' @param dsn
+#' @param db_dir_base
+#' @param pattern
+#' @param execute
+#'
+#' @return
 #' @export
+#'
+#' @examples
 db_insert_archive <- function(
     k_id, v_id,
     seq_start = 1,
@@ -137,7 +201,7 @@ db_insert_archive <- function(
     execute = FALSE) {
 
   # List existing files
-  x <- tibble(
+  x <- tibble::tibble(
     Filnamn =
       list.files(
         file.path(db_dir_base, get_dir_path(k_id, v_id)),
@@ -219,7 +283,20 @@ db_insert_archive <- function(
 # if they are expressed relative to i_view64.exe,
 # which can be moved. Put the exe-file in the picture maps!
 
+#' Title
+#'
+#' @param files
+#' @param output_file
+#' @param output_dir
+#' @param sub_dir
+#' @param relative
+#' @param file_encoding
+#' @param i_view_path
+#'
+#' @return
 #' @export
+#'
+#' @examples
 thumbs_bat <- function(
     files,
     output_file,

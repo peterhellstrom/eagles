@@ -10,8 +10,24 @@
 # the RODBC or the DBI package. This functionality was removed in
 # September 2023, in favour of the DBI package as the DBI errors were no longer
 # present.
-#
+
+#' Title
+#'
+#' @param spatial
+#' @param crs
+#' @param add_coordinates
+#' @param coordinate_cols
+#' @param odbc_name
+#' @param encoding
+#' @param add_subsites
+#' @param add_monitoring
+#' @param drop_id_columns
+#' @param ortnamn_path
+#'
+#' @return
 #' @export
+#'
+#' @examples
 wtse_sites <- function(
     spatial = FALSE,
     crs = NULL,
@@ -22,7 +38,7 @@ wtse_sites <- function(
     add_subsites = TRUE,
     add_monitoring = TRUE,
     drop_id_columns = TRUE,
-    ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg"
+    ortnamn_path = "G:/Ortnamn/GSD-Ortnamn_2012.gpkg"
 ) {
 
   on.exit(DBI::dbDisconnect(con))
@@ -244,7 +260,7 @@ named_join <- function(
 get_sites_coords <- function(con) {
   # Add geographical data (in SWEREF99 TM)
   # Source data is "hard-coded" in the data connection.
-  # db_ortnamn_path = "E:/Maps/Ortnamn/GSD-Ortnamn_2012.gpkg"
+  # db_ortnamn_path = "G:/Ortnamn/GSD-Ortnamn_2012.gpkg"
   # NOTE: The GeoPackage dataset is a linked table in the
   # wtse database backend (Havsorn_Data). MS Access can not
   # deal with spatial datatypes, so it is necessary to

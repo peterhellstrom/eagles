@@ -1,6 +1,13 @@
+#' Title
+#'
+#' @param filename
+#'
+#' @return
 #' @export
-# (Non-exported) function from RODBC-package, RODBC:::full.path()
+#'
+#' @examples
 db_full_path <- function(filename) {
+  # (Non-exported) function from RODBC-package, RODBC:::full.path()
   fn <- gsub("\\", "/", filename, fixed = TRUE)
   is.abs <- length(grep("^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]:|/", fn)) > 0L
   gsub("/", "\\",
@@ -9,9 +16,19 @@ db_full_path <- function(filename) {
   )
 }
 
+#' Title
+#'
+#' @param access_file
+#' @param uid
+#' @param pwd
+#' @param ...
+#'
+#' @return
 #' @export
-# Adapted from RODBC::odbcConnectAccess2007()
+#'
+#' @examples
 db_connect_to_access_string <- function(
+    # Adapted from RODBC::odbcConnectAccess2007()
     access_file, uid = "", pwd = "", ...) {
 
   con <- if (missing(access_file)) {
@@ -43,7 +60,20 @@ db_connect_to_access_string <- function(
 # RODBC - om "connection string" inte innehåller lösenordet så visas automatiskt dialogruta
 # DBI - använd getPass::getPass()
 
+#' Title
+#'
+#' @param access_file
+#' @param uid
+#' @param pwd
+#' @param encoding
+#' @param package
+#' @param check_connection
+#' @param ...
+#'
+#' @return
 #' @export
+#'
+#' @examples
 db_connect_to_access <- function(
     access_file,
     uid = "",
@@ -117,7 +147,19 @@ db_pwd_ask <- function() {
   pwd
 }
 
+#' Title
+#'
+#' @param con
+#' @param sql_expr
+#' @param ...
+#' @param package
+#' @param tibble
+#' @param na_value
+#'
+#' @return
 #' @export
+#'
+#' @examples
 db_import_access <- function(
     con,
     sql_expr,
@@ -165,14 +207,27 @@ db_import_access <- function(
   res
 }
 
-#' @export
 # Get data with identical structure from multiple Access database files
 # fls = character vector with file paths, sql_expr = string with SQL expression
+
+#' Title
+#'
+#' @param fls
+#' @param sql_expr
+#' @param ...
+#' @param source_column
+#' @param source_names
+#' @param na_value
+#'
+#' @return
+#' @export
+#'
+#' @examples
 db_import_access_n <- function(
     fls,
     sql_expr,
     ...,
-	source_column = "source",
+    source_column = "source",
     source_names = basename(fls),
     na_value = c("", " ", "  ")) {
   purrr::map(
@@ -191,20 +246,41 @@ db_import_access_n <- function(
 }
 
 # Parameterized SQL-queries with RODBCext
+
+#' Title
+#'
+#' @param tbl
+#' @param flds
+#' @param type
+#' @param where_fld
+#'
+#' @return
 #' @export
+#'
+#' @examples
 db_pquery <- function(
     tbl,
     flds,
     type = c("insert", "select", "update", "delete"),
-    where_fld = NULL) {
+    where_fld = NULL
+) {
 
-  switch(type,
-	insert = paste("INSERT INTO ", tbl, " (", paste(flds, collapse = ", "),
-		") VALUES (", stringr::str_sub(paste(rep("?", length(flds)), collapse = ", "), 1, -1), ")", sep = ""),
-	select = paste("SELECT ", paste(flds, collapse = ", "), " FROM ", tbl, sep = ""),
-	update = gsub(pattern = paste0(where_fld, " = \\?, "), replacement = "", x = paste("UPDATE ", tbl, " SET ",
-		paste(flds, collapse = " = ?, "), " = ? WHERE ", where_fld, " = ?;", sep = ""))
-	)
+  switch(
+    type,
+    insert = paste(
+      "INSERT INTO ", tbl, " (", paste(flds, collapse = ", "),
+      ") VALUES (", stringr::str_sub(paste(rep("?", length(flds)), collapse = ", "), 1, -1), ")",
+      sep = ""
+    ),
+    select = paste("SELECT ", paste(flds, collapse = ", "), " FROM ", tbl, sep = ""),
+    update = gsub(
+      pattern = paste0(where_fld, " = \\?, "), replacement = "",
+      x = paste(
+        "UPDATE ", tbl, " SET ",
+        paste(flds, collapse = " = ?, "), " = ? WHERE ", where_fld, " = ?;", sep = ""
+      )
+    )
+  )
 }
 
 # db_pquery("tbl", flds = c("a", "b"), type = "insert")

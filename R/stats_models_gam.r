@@ -1,7 +1,18 @@
 # Functions for derivatives of GAM models by Gavin Simpson
 # Source: https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30
 
+#' Title
+#'
+#' @param x
+#' @param d
+#' @param upper
+#' @param lower
+#' @param eval
+#'
+#' @return
 #' @export
+#'
+#' @examples
 signifD <- function(x, d, upper, lower, eval = 0) {
   miss <- upper > eval & lower < eval
   incr <- decr <- x
@@ -21,7 +32,16 @@ signifD <- function(x, d, upper, lower, eval = 0) {
 # output_format is long (default) or wide
 # Dependencies: https://github.com/gavinsimpson/gratia/blob/master/R/derivatives.R
 
+#' Title
+#'
+#' @param m
+#' @param n_pts_predict
+#' @param output_format
+#'
+#' @return
 #' @export
+#'
+#' @examples
 gam_predict <- function(
     m,
     n_pts_predict = 100,
@@ -128,7 +148,25 @@ gam_predict <- function(
 # Re-work the function below, move "p-section" to gam_fit_trends and make this
 # function a strict geom function without dependencies.
 
+#' Title
+#'
+#' @param ...
+#' @param rect.params
+#' @param fit.params
+#' @param ci.params
+#' @param fit.decr.params
+#' @param fit.incr.params
+#' @param hline.params
+#' @param point.params
+#' @param add_items
+#' @param object
+#' @param n_pts_predict
+#' @param term_index
+#'
+#' @return
 #' @export
+#'
+#' @examples
 geom_trend_gam <- function(
     ...,
     rect.params = list(),
@@ -320,7 +358,16 @@ geom_trend_gam <- function(
 
 
 # input argument model is a function!
+
+#' Title
+#'
+#' @param data
+#' @param model
+#'
+#' @return
 #' @export
+#'
+#' @examples
 gam_fit_trends <- function(data, model) {
 
   # Created nested data and fit model
@@ -342,7 +389,21 @@ gam_fit_trends <- function(data, model) {
 
 # OBS! Endast testad på HELCOM-data!
 # Add call to geom_trend_gam in here instead?
+
+#' Title
+#'
+#' @param object
+#' @param x
+#' @param y
+#' @param group
+#' @param p_value_cutoff
+#' @param xlab
+#' @param ylab
+#'
+#' @return
 #' @export
+#'
+#' @examples
 plot_gam_fit_trends <- function(
     object, x, y, group, p_value_cutoff,
     xlab = NULL, ylab = NULL

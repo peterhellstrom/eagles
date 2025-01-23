@@ -2,7 +2,17 @@
 # Requires driver(s) downloaded from:
 # https://sourceforge.net/projects/ucanaccess/
 
+#' Title
+#'
+#' @param access_db_path
+#' @param ...
+#' @param driver_db_dir
+#' @param bin_dir
+#'
+#' @return
 #' @export
+#'
+#' @examples
 access_db_java_connection <- function(
     access_db_path,
     ...,
@@ -10,7 +20,7 @@ access_db_java_connection <- function(
     bin_dir = "UCanAccess-5.0.1.bin") {
 
   # access DB path verification ----
-  if (! is.character(access_db_path)) {
+  if (!is.character(access_db_path)) {
     stop("invalid \"access_db_path\" argument.\n")
   }
 
