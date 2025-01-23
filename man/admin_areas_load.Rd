@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 admin_areas_load(
-  db = "G:/Naturvard/Naturvard.gpkg",
+  db = Sys.getenv("gpkg_naturvard"),
   layer = c("admin_kommun_fastk", "admin_lan_fastk", "admin_distrikt",
     "admin_landskap_fran_distrikt", "admin_landskap_artportalen",
     "admin_rapportomrade_artportalen"),
