@@ -69,7 +69,8 @@ rc_coords <- function(
     width = 6,
     pad = " ",
     side = "right",
-    sep = " ") {
+    sep = " "
+) {
 
   lat_hemisphere <- dplyr::case_when(
     latitude >= 0 ~ "N",
@@ -127,7 +128,10 @@ rc_coords <- function(
 #' @export
 #'
 #' @examples
-rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
+rc_fagel3_county_code <- function(
+    x,
+    direction = c("to", "from")
+) {
 
   direction <- match.arg(direction)
 
@@ -162,7 +166,12 @@ rc_fagel3_county_code <- function(x, direction = c("to", "from")) {
 #' @export
 #'
 #' @examples
-rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
+rc_ring_seq_sprintf <- function(
+    series,
+    start,
+    n,
+    rc_format = TRUE
+) {
   if (rc_format) {
     sprintf(
       paste0(series, "   %s"),
@@ -195,11 +204,18 @@ rc_ring_seq_sprintf <- function(series, start, n, rc_format = TRUE) {
 #'
 #' @examples
 rc_ring_seq <- function(
-    letter_start, num_start, num_end,
-    width = 4, pad = "0") {
+    letter_start,
+    num_start,
+    num_end,
+    width = 4, pad = "0"
+) {
   stringr::str_c(
     letter_start,
-    stringr::str_pad(num_start:num_end, width = width, pad = pad)
+    stringr::str_pad(
+      num_start:num_end,
+      width = width,
+      pad = pad
+    )
   )
 }
 
@@ -212,7 +228,10 @@ rc_ring_seq <- function(
 #' @export
 #'
 #' @examples
-rc_get_central <- function(.color2, .ring) {
+rc_get_central <- function(
+    .color2,
+    .ring
+) {
 
   .first_pos <- stringr::str_sub({{ .ring }}, 1, 1)
 
@@ -308,7 +327,8 @@ rc_import_from_db <- function(
 rc_parse_province_midpt <- function(
     .x,
     pattern = "(?<latd>[0-9]{2})(?<latm>[0-9]{2})(?<lath>[A-Z]{1})(?<lond>[0-9 ]+)(?<lonm>[0-9]{2})(?<lonh>[A-Z]{1})",
-    col_names = c("lat_dd", "lon_dd")) {
+    col_names = c("lat_dd", "lon_dd")
+) {
 
   .x |>
     stringr::str_match(pattern) |>
@@ -384,7 +404,8 @@ rc_fagel3_report_file <- function(
     .kullar = kullar,
     .ringon = ringon,
     .ringar = ringar,
-    export = TRUE) {
+    export = TRUE
+) {
 
   x <- dplyr::bind_rows(
     df_c(

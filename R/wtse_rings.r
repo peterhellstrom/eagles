@@ -98,11 +98,14 @@ add_ring_group <- function(.x, ..., group_variable = grp) {
   .x |>
     dplyr::group_by(...) |>
     dplyr::mutate(
-      {{ group_variable }} := dplyr::cur_group_id()) |>
+      {{ group_variable }} := dplyr::cur_group_id()
+    ) |>
     dplyr::ungroup() |>
     dplyr::mutate(
       {{ group_variable }} :=
-        base::cumsum( {{ group_variable }} != dplyr::lag( {{ group_variable }}, default = 1)) + 1
+        base::cumsum(
+          {{ group_variable }} != dplyr::lag( {{ group_variable }}, default = 1)
+        ) + 1
     )
 }
 
@@ -121,9 +124,11 @@ add_ring_group_by_number <- function(.x, ..., ring, group_variable = grp) {
   .x |>
     dplyr::group_by(...) |>
     dplyr::mutate(
-      ring_series = stringr::str_sub( {{ring}} , 1, 1),
+      ring_series = stringr::str_sub( {{ ring }} , 1, 1),
       ring_serial = readr::parse_number( {{ ring }} ),
       {{ group_variable }} :=
-        base::cumsum((ring_serial - dplyr::lag(ring_serial, default = 1)) != 1)
+        base::cumsum(
+          (ring_serial - dplyr::lag(ring_serial, default = 1)) != 1
+        )
     )
 }

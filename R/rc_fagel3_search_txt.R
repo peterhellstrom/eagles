@@ -13,11 +13,15 @@ rc_data_search_txt <- function(
     pattern,
     path_pattern = ".*RCdata\\.txt$",
     fixed = FALSE,
-    markers = FALSE) {
+    markers = FALSE
+) {
 
   x <- sifr::sif(
-    pattern = pattern, path_pattern = path_pattern,
-    fixed = fixed, markers = markers)
+    pattern = pattern,
+    path_pattern = path_pattern,
+    fixed = fixed,
+    markers = markers
+  )
 
   x_tbl <- x |>
     tibble::as_tibble()
