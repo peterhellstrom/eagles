@@ -5,7 +5,7 @@
 #' @param type
 #' @param position
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

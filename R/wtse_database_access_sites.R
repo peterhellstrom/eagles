@@ -6,7 +6,7 @@
 #' @param wtse_sites
 #' @param dsn
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -110,7 +110,7 @@ ORDER BY tLokaler.{area_field}, tLokaler.Lokalkod;"
 #' @param .data
 #' @param wtse_sites
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -142,7 +142,7 @@ wtse_sites_get_access_map <- function(
 #' @param .data
 #' @param dsn
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

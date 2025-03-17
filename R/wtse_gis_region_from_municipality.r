@@ -16,7 +16,7 @@
 #' @param .region
 #' @param .kommun
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -56,7 +56,7 @@ wtse_region_from_kommun <- function(.region, .kommun) {
 #'
 #' @param x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

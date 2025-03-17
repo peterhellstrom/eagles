@@ -6,7 +6,7 @@
 #' @param .prefix
 #' @param remove
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -59,7 +59,7 @@ df_c <- function(
 #' @param unique
 #' @param na.rm
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

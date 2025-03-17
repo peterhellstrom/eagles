@@ -7,7 +7,7 @@
 #' @param layer
 #' @param import_to_sf
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -58,7 +58,7 @@ admin_areas_load <- function(
 #' @param rapportomrade_sf
 #' @param id
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -130,7 +130,7 @@ admin_areas_join <- function(
 #' @param left
 #' @param geometry_field
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

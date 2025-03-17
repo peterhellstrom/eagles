@@ -2,7 +2,7 @@
 #'
 #' @param month
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -27,7 +27,7 @@ month_switch <- function(month) {
 #'
 #' @param x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -55,7 +55,7 @@ reshape_species_year <- function(x) {
 #' @param year
 #' @param convert_date
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -95,7 +95,7 @@ falsterbo_species_year <- function(species, year, convert_date = TRUE) {
 #' @param species
 #' @param replace_na
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -140,7 +140,7 @@ falsterbo_species_all_years <- function(species, replace_na = TRUE) {
 #'
 #' @param year
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

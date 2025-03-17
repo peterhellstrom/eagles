@@ -5,7 +5,7 @@
 #'
 #' @param .data
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -42,7 +42,7 @@ calculate_indicator <- function(.data) {
 #'
 #' @param df
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -59,7 +59,7 @@ gam_prop_productive <- function(df) {
 #'
 #' @param df
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -76,7 +76,7 @@ gam_brood_size <- function(df) {
 #'
 #' @param df
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -100,7 +100,7 @@ gam_productivity <- function(df) {
 #' @param outcomes
 #' @param n_boot
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -133,7 +133,7 @@ wtse_boot <- function(
 #' @param n.boot
 #' @param replace
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -202,7 +202,7 @@ wtse_productivity <- function(
 #' @param replace
 #' @param plot
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

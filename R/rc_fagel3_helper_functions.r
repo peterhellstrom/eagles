@@ -6,7 +6,7 @@
 #' @param side
 #' @param pad
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -57,7 +57,7 @@ rc_parse_ring <- function(
 #' @param side
 #' @param sep
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -124,7 +124,7 @@ rc_coords <- function(
 #' @param x
 #' @param direction
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -162,7 +162,7 @@ rc_fagel3_county_code <- function(
 #' @param n
 #' @param rc_format
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -199,7 +199,7 @@ rc_ring_seq_sprintf <- function(
 #' @param width
 #' @param pad
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -224,7 +224,7 @@ rc_ring_seq <- function(
 #' @param .color2
 #' @param .ring
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -261,7 +261,7 @@ rc_get_central <- function(
 #' @param package
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -320,7 +320,7 @@ rc_import_from_db <- function(
 #' @param pattern
 #' @param col_names
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -389,7 +389,7 @@ rc_parse_province_midpt <- function(
 #' @param .ringar
 #' @param export
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

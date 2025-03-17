@@ -5,7 +5,7 @@
 #' @param .x
 #' @param pattern
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -28,7 +28,7 @@ wtse_sites_str <- function(.x, pattern = "([0-9]{1,3})") {
 #'
 #' @param .x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

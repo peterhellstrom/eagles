@@ -2,7 +2,7 @@
 #'
 #' @param .x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -24,7 +24,7 @@ group_levels <- function(.x) {
 #' @param fn
 #' @param na_rm
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -54,7 +54,7 @@ group_sum <- function(
 #' @param ...
 #' @param names_to
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

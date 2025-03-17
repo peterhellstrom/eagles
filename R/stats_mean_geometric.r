@@ -3,7 +3,7 @@
 #' @param x
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -27,7 +27,7 @@ mean_geometric <- function(x, ...) {
 #' @param range
 #' @param na.rm
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -99,7 +99,7 @@ ci <- function(
 #' @param na.rm
 #' @param alpha
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -144,7 +144,7 @@ summary_geometric <- function(x, na.rm = TRUE, alpha = 0.05) {
 #' @param x
 #' @param na.rm
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

@@ -9,7 +9,7 @@
 #' @param lower
 #' @param eval
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -38,7 +38,7 @@ signifD <- function(x, d, upper, lower, eval = 0) {
 #' @param n_pts_predict
 #' @param output_format
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -163,7 +163,7 @@ gam_predict <- function(
 #' @param n_pts_predict
 #' @param term_index
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -364,7 +364,7 @@ geom_trend_gam <- function(
 #' @param data
 #' @param model
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -400,7 +400,7 @@ gam_fit_trends <- function(data, model) {
 #' @param xlab
 #' @param ylab
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

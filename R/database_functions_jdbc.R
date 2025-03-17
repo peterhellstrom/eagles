@@ -9,7 +9,7 @@
 #' @param driver_db_dir
 #' @param bin_dir
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

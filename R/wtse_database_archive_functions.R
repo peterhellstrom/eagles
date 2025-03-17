@@ -3,7 +3,7 @@
 #' @param k_id
 #' @param v_id
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -19,7 +19,7 @@ get_dir_path <- function(k_id, v_id) {
 #' @param sep
 #' @param file_extension
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -44,7 +44,7 @@ set_file_name <- function(
 #' @param start
 #' @param end
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -109,7 +109,7 @@ get_seq_start <- function(
 #' @param sep
 #' @param file_extension
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -183,7 +183,7 @@ db_copy_new_files <- function(
 #' @param pattern
 #' @param execute
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -293,7 +293,7 @@ db_insert_archive <- function(
 #' @param file_encoding
 #' @param i_view_path
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

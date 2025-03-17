@@ -52,7 +52,7 @@
 #' @param ylab
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

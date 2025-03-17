@@ -24,7 +24,7 @@
 #' @param drop_id_columns
 #' @param ortnamn_path
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -222,7 +222,7 @@ wtse_sites <- function(
 #' @param .join_cols
 #' @param .fn_join
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -293,7 +293,7 @@ get_sites_coords <- function(con) {
 
 #' Title
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

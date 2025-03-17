@@ -5,7 +5,7 @@
 #' @param fixed
 #' @param markers
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -39,7 +39,7 @@ rc_data_search_txt <- function(
 #' @param markers
 #' @param empty_ringondb
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

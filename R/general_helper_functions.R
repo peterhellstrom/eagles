@@ -7,7 +7,7 @@
 #' @param .accuracy
 #' @param f
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -19,7 +19,7 @@ round_any <- function(.x, .accuracy, f = round) {
 #'
 #' This functions rounds a numeric value upwards
 #' @param .x Numeric value
-#' @return Numeric
+#' @returns Numeric
 #' @export
 round_up <- function(.x) {
   out <- 10^ceiling(log10(.x))
@@ -32,7 +32,7 @@ round_up <- function(.x) {
 #' @param round_to
 #' @param dir
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -51,7 +51,7 @@ round_choose <- function(x, round_to, dir = c("up", "down")) {
 #' @param vec
 #' @param fun
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -67,7 +67,7 @@ my_min_max <- function(vec, fun = max) {
 #'
 #' @param .x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -83,7 +83,7 @@ get_digits <- function(.x) {
 #' @param sep
 #' @param pos
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -99,7 +99,7 @@ get_member <- function(.x, sep = ",", pos = 1) {
 #'
 #' @param x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -117,7 +117,7 @@ convert_bytes <- function(x) {
 #'
 #' @param x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -135,7 +135,7 @@ asc <- function(x) {
 #'
 #' @param x
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -149,7 +149,7 @@ lbl_breaks <- function(x) {
 #' @param breaks
 #' @param by
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -190,7 +190,7 @@ cut2 <- function(x, breaks = NULL, by = 5) {
 #' @param suffix
 #' @param sep
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -211,7 +211,7 @@ add_timestamp <- function(.x, suffix = NULL, sep = "_") {
 #' @param .out
 #' @param .data
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -228,7 +228,7 @@ sink_cat <- function(.out, .data) {
 #' @param x
 #' @param match_value
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -242,7 +242,7 @@ has_field_name <- function(x, match_value) {
 #'
 #' @param i
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -261,7 +261,7 @@ extend <- function(alphabet) function(i) {
 #' @param .files
 #' @param .columns
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -282,7 +282,7 @@ pdf_page_count <- function(.files, .columns = c("pages", "created")) {
 #' @param yes_value
 #' @param no_value
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -313,7 +313,7 @@ convert_to_logical <- function(.x, cols, yes_value = "Ja", no_value = "Nej") {
 #' @param yes_value
 #' @param no_value
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -348,7 +348,7 @@ colname_to_value <- function(.x, cols, yes_value = TRUE, no_value = NA) {
 #' @param .x
 #' @param cols
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -375,7 +375,7 @@ colname_to_value2 <- function(.x, cols) {
 #' @param .vars
 #' @param .fn
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -395,7 +395,7 @@ sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
 #' @param .var
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -422,7 +422,7 @@ add_wt <- function(.x, .var, ...) {
 #' @param add_date
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -484,7 +484,7 @@ download_zip <- function(
 #'
 #' @param url
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

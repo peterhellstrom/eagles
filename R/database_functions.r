@@ -2,7 +2,7 @@
 #'
 #' @param filename
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -23,7 +23,7 @@ db_full_path <- function(filename) {
 #' @param pwd
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -70,7 +70,7 @@ db_connect_to_access_string <- function(
 #' @param check_connection
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -156,7 +156,7 @@ db_pwd_ask <- function() {
 #' @param tibble
 #' @param na_value
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -219,7 +219,7 @@ db_import_access <- function(
 #' @param source_names
 #' @param na_value
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -254,7 +254,7 @@ db_import_access_n <- function(
 #' @param type
 #' @param where_fld
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

@@ -9,7 +9,7 @@
 #' @param country
 #' @param .v
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -44,7 +44,7 @@ proj_ring_gen <- function(
 #' @param .v
 #' @param seq_start
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -90,7 +90,7 @@ proj_ring_numeric <- function(
 #' @param ...
 #' @param group_variable
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -116,7 +116,7 @@ add_ring_group <- function(.x, ..., group_variable = grp) {
 #' @param ring
 #' @param group_variable
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

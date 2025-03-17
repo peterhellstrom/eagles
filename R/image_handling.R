@@ -31,7 +31,7 @@
 #' @param clean_names
 #' @param delete_temp_files
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples

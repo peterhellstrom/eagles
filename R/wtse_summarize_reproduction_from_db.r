@@ -39,7 +39,7 @@
 #' @param column
 #' @param ...
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -75,7 +75,7 @@ wtse_columns <- function (
 #' @param .columns
 #' @param .drop
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -119,7 +119,7 @@ wtse_transform <- function(
 #' @param .data
 #' @param clean_names
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -163,7 +163,7 @@ wtse_vars <- function(
 #' @param .data
 #' @param .by_column
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
@@ -203,7 +203,7 @@ monitoring_summary <- function(
 #' @param .columns
 #' @param .remove
 #'
-#' @return
+#' @returns
 #' @export
 #'
 #' @examples
