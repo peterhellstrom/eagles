@@ -15,7 +15,7 @@ db_insert_archive(
   time_text,
   dsn = "Havsorn_Data",
   db_dir_base,
-  pattern = ".jpg",
+  pattern = "*.jpg",
   execute = FALSE
 )
 }

@@ -12,6 +12,7 @@ db_copy_new_files(
   seq_start,
   overwrite = FALSE,
   execute = TRUE,
+  pattern = "*.jpg",
   sep = ".",
   file_extension = ".jpg"
 )

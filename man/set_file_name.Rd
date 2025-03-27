@@ -4,7 +4,7 @@
 \alias{set_file_name}
 \title{Title}
 \usage{
-set_file_name(k_id, v_id, b_id, sep = ".", file_extension = "jpg")
+set_file_name(k_id, v_id, b_id, sep = ".", file_extension = ".jpg")
 }
 \arguments{
 \item{file_extension}{}

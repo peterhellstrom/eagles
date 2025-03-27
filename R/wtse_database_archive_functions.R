@@ -28,10 +28,10 @@ set_file_name <- function(
     v_id,
     b_id,
     sep = ".",
-    file_extension = "jpg"
+    file_extension = ".jpg"
 ) {
   sprintf(
-    'k%02d%sv%04d%sb%04d.%s',
+    'k%02d%sv%04d%sb%04d%s',
     k_id, sep, v_id, sep, b_id, file_extension
   )
 }
@@ -81,7 +81,7 @@ get_seq_start <- function(
 #
 # get_dir_path(k_id, v_id)
 # set_file_name(k_id, v_id, b_id)
-# set_file_name(k_id, v_id, b_id, sep = "_", file_extension = "tif")
+# set_file_name(k_id, v_id, b_id, sep = "_", file_extension = ".tif")
 #
 # f <- file.path(
 #   db_dir_base,
@@ -114,24 +114,41 @@ get_seq_start <- function(
 #'
 #' @examples
 db_copy_new_files <- function(
-    input_dir, db_dir_base,
-    k_id, v_id,
+    input_dir,
+    db_dir_base,
+    k_id,
+    v_id,
     seq_start,
     overwrite = FALSE,
     execute = TRUE,
+    pattern = "*.jpg",
     sep = ".",
     file_extension = ".jpg"
 ) {
 
   # List files in input directory
-  x <- list.files(path = input_dir, pattern = pattern, full.names = TRUE)
+  x <- list.files(
+    path = input_dir,
+    pattern = pattern,
+    full.names = TRUE
+  )
+
   # Generate sequence for new file names
-  b_id <- seq(seq_start, by = 1, length.out = length(x))
+  b_id <- seq(
+    seq_start,
+    by = 1,
+    length.out = length(x)
+  )
+
   # Create new file names
   x_new <- set_file_name(
-    k_id = k_id, v_id = v_id, b_id = b_id,
-    sep = sep, file_extension = file_extension
+    k_id = k_id,
+    v_id = v_id,
+    b_id = b_id,
+    sep = sep,
+    file_extension = file_extension
   )
+
   # Rename existing files in input directory
   x_new <- file.path(input_dir, x_new)
 
@@ -140,7 +157,11 @@ db_copy_new_files <- function(
   }
 
   # Create output directory
-  db_dir <- get_dir_path(k_id = k_id, v_id = v_id)
+  db_dir <- get_dir_path(
+    k_id = k_id,
+    v_id = v_id
+  )
+
   db_dir_path <- file.path(db_dir_base, db_dir)
 
   if (execute) {
@@ -188,7 +209,8 @@ db_copy_new_files <- function(
 #'
 #' @examples
 db_insert_archive <- function(
-    k_id, v_id,
+    k_id,
+    v_id,
     seq_start = 1,
     observer_id,
     observer_text,
@@ -197,15 +219,17 @@ db_insert_archive <- function(
     time_text,
     dsn = "Havsorn_Data",
     db_dir_base,
-    pattern = ".jpg",
-    execute = FALSE) {
+    pattern = "*.jpg",
+    execute = FALSE
+) {
 
   # List existing files
   x <- tibble::tibble(
     Filnamn =
       list.files(
         file.path(db_dir_base, get_dir_path(k_id, v_id)),
-        pattern = pattern)
+        pattern = pattern
+      )
   )
 
   # Construct data
@@ -220,8 +244,10 @@ db_insert_archive <- function(
       TidsPeriod    = time_text
     ) |>
     dplyr::select(
-      VolymID, Lopnr, Filnamn, KontaktID, KontaktText,
-      TypDataID, TypHandlingID, TidsPeriod
+      VolymID, Lopnr, Filnamn,
+      KontaktID, KontaktText,
+      TypDataID, TypHandlingID,
+      TidsPeriod
     )
 
   # Check if data already exists - only add non-existing file names!
@@ -351,7 +377,12 @@ thumbs_bat <- function(
 
   # Connect/create bat-file
   file_conn <- file(bat_file)
+
   # Write data to bat_file
-  writeLines(c("chcp 28591", bat_content), file_conn)
+  writeLines(
+    c("chcp 28591", bat_content),
+    file_conn
+  )
+
   close(file_conn)
 }
