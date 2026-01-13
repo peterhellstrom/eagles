@@ -143,6 +143,7 @@ wtse_trend <- function(
     )
 
   } else {
+    signif <- FALSE
     cat("significance only available for gam or gamm objects fitted with mgcv", "\n")
   }
 

@@ -64,7 +64,8 @@ group_sum_sets <- function(
     group_sets,
     sum_cols,
     ...,
-    names_to = "group_set") {
+    names_to = "group_set"
+) {
 
   purrr::map(
     group_sets,
@@ -79,7 +80,7 @@ group_sum_sets <- function(
     purrr::list_rbind(
       names_to = names_to
     ) |>
-    select(
+    dplyr::select(
       all_of(names_to),
       any_of(names(data))
     )

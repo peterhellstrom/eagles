@@ -4,7 +4,13 @@
 \alias{wtse_transform}
 \title{Title}
 \usage{
-wtse_transform(.data, ..., .response = UtfallR, .columns = NULL, .drop = FALSE)
+wtse_transform(
+  .data,
+  ...,
+  .response = OvervakningUtfallR,
+  .columns = NULL,
+  .drop = FALSE
+)
 }
 \arguments{
 \item{.drop}{}

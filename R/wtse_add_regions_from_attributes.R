@@ -20,7 +20,7 @@
 #' @export
 #'
 #' @examples
-wtse_region_from_kommun <- function(.region, .kommun) {
+wtse_add_region_from_kommun <- function(.region, .kommun) {
 
   # Check if Region = 1 (Kust), then proceed to check if Kommun is any of the four in X-county
   # that divides N Bh and S Bh. If Region is 2, 3, 4, Kommun is not necessary to define subregion
@@ -73,3 +73,65 @@ wtse_region_reformat <- function(x) {
     TRUE ~ NA_character_
   )
 }
+
+
+#' Title
+#'
+#' @param separate 
+#' @param use_factors 
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+wtse_add_region_from_county <- function(
+    separate = TRUE, 
+    use_factors = TRUE
+) {
+  
+  out <- tibble::tribble(
+    ~RegionID, ~Huvudnivå, ~`Undernivå 1`, ~`Undernivå 2`, ~LanBokstav, ~LanKod,
+    1, "Östersjön", "Eg Östersjön", "Götaland", "M, K, H, I, E", "12, 10, 08, 09, 05",
+    1, "Östersjön", "Eg Östersjön", "Svealand", "D, AB", "04, 01",
+    1, "Östersjön", "Bottniska viken", "Bottenhavet", "C, X, Y", "03, 21, 22",
+    1, "Östersjön", "Bottniska viken", "Bottenviken", "AC, BD", "24, 25",
+    4, "Västerhavet", "Södra Västerhavet", "Öresund", "M", "12",
+    4, "Västerhavet", "Norra Västerhavet", "Kattegat", "N", "13",
+    4, "Västerhavet", "Norra Västerhavet", "Skagerrak", "O", "14",
+    2, "Inland", "Inlandet i söder", "Götaland", "M, K, N, F, G, H, E, O", "12, 10, 13, 06, 07, 08, 05, 14",
+    2, "Inland", "Inlandet i söder", "Svealand", "AB, C, D, S, T, U, W", "01, 03, 04, 17, 18, 19, 20",
+    # Note that entire county of X (Gävleborg) has been assigned to RegionID = 3,
+    # but southern part of this county has RegionID = 2 in database!
+    3, "Inland", "Inlandet i norr", "Nedre Norrland", "X, Y, Z", "21, 22, 23",
+    3, "Inland", "Inlandet i norr", "Övre Norrland", "AC, BD", "24, 25"
+  )
+  
+  if (separate) {
+    out <- out |> 
+      tidyr::separate_longer_delim(
+        cols = c(LanBokstav, LanKod), 
+        delim = ", "
+      )
+  }
+  
+  if (use_factors) {
+    # NOTE! Undernivå 2 is not a factor yet...
+    out <- out |> 
+      dplyr::mutate(
+        Huvudnivå = factor(
+          Huvudnivå, 
+          levels = c("Östersjön", "Västerhavet", "Inland")
+        ),
+        `Undernivå 1` = factor(
+          `Undernivå 1`, 
+          levels = c(
+            "Eg Östersjön", "Bottniska viken", 
+            "Södra Västerhavet", "Norra Västerhavet", 
+            "Inlandet i söder", "Inlandet i norr"
+          )
+        )
+      )
+  }
+  out
+}
+

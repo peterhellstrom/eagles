@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 wtse_columns(
-  dsn = "Havsorn",
+  dsn = "Havsorn_Data",
   table = "luOvervakningUtfall",
   column = "OvervakningUtfallR",
   ...

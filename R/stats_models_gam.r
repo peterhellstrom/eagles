@@ -43,21 +43,21 @@ signifD <- function(x, d, upper, lower, eval = 0) {
 #'
 #' @examples
 gam_predict <- function(
-    m,
+    .fit_model,
     n_pts_predict = 100,
     output_format = "long"
 ) {
-
-  cn <- attr(m$terms , "term.labels")
-
-  m_deriv <- gratia::derivatives(
-    object = m,
+  
+  cn <- attr(.fit_model$terms , "term.labels")
+  
+  .model_deriv <- gratia::derivatives(
+    object = .fit_model,
     n = n_pts_predict
   )
-
-  p <- stats::predict(
-    m,
-    newdata = m_deriv,
+  
+  .predict <- stats::predict(
+    .fit_model,
+    newdata = .model_deriv,
     type = "response",
     se.fit = TRUE
   ) |>
@@ -66,37 +66,37 @@ gam_predict <- function(
     rlang::set_names(
       c("predict", "se.predict")
     )
-
-  if (nrow(m_deriv) == 0) {
+  
+  if (nrow(.model_deriv) == 0) {
     # For linear models fitted with lm() [i.e. without smoothing term], e.g. y ~ x
     # Included for comparison of linear and gam-estimated trends
     # Plotting this will only work if output_format = "long"
-    p <- p |>
-      mutate(
+    .predict <- .predict |>
+      dplyr::mutate(
         incr = NA_real_,
         decr = NA_real_
       )
-
+    
   } else {
     # If a model with smoothing terms,
     # e.g. y ~ s(x), is fitted to the data.
     S_deriv <- signifD(
-      p[["predict"]],
-      m_deriv$.derivative,
-      m_deriv$.upper_ci,
-      m_deriv$.lower_ci,
+      .predict[["predict"]],
+      .model_deriv$.derivative,
+      .model_deriv$.upper_ci,
+      .model_deriv$.lower_ci,
       eval = 0
     ) |>
       as.data.frame() |>
       tibble::as_tibble()
-
+    
     p <- dplyr::bind_cols(
-      m_deriv,
-      p,
+      .model_deriv,
+      .predict,
       S_deriv
     )
   }
-
+  
   if (output_format == "long") {
     p <- p |>
       tidyr::pivot_longer(
@@ -117,12 +117,150 @@ gam_predict <- function(
         se.predict,
         variable
       )
-
+    
     # p <- p |> dplyr::filter(!is.na(value))
   }
-
+  
   p
+  
+}
 
+
+#' Title
+#'
+#' @param data
+#' @param model
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+gam_fit_trends <- function(.data, .model_fn, .predict_fn = gam_predict, ...) {
+  
+  # Created nested data and fit model
+  # for each item in list-column
+  
+  .model <- .data |>
+    tidyr::nest() |>
+    dplyr::mutate(
+      .fit_model = purrr::map(data, \(x) .model_fn(x, ... )),
+      .predict = purrr::map(.fit_model, .predict_fn),
+      .glance = purrr::map(.fit_model, broom::glance)
+    ) |>
+    tidyr::unnest(.glance) |>
+    dplyr::mutate(
+      .tidy_output = purrr::map(.fit_model, broom::tidy)
+    ) |>
+    tidyr::unnest(.tidy_output)
+  
+  # structure(
+  #   .model,
+  #   class = c("gam_fit_trends", class(.model))
+  # )
+  
+  class(.model) <- c("gam_fit_trends", class(.model))
+  return(.model)
+}
+
+#' Title
+#'
+#' @param object
+#' @param x
+#' @param y
+#' @param group
+#' @param p_value_cutoff
+#' @param xlab
+#' @param ylab
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+plot.gam_fit_trends <- function(
+    object,
+    x,
+    y,
+    group,
+    p_value_cutoff,
+    xlab = NULL,
+    ylab = NULL
+) {
+  
+  # Check function, doesn't work if input arguments are named
+  # x = år does not work...
+  
+  # Also, what happens if no models are significant but p_value_cutoff
+  # is specified? Fails?
+  
+  obs_data <- object |>
+    unnest(
+      cols = c( {{ group }}, data)
+    )
+  
+  if (missing(p_value_cutoff)) {
+    pred_data <- object |>
+      unnest(
+        cols = c( {{ group }}, .predict)
+      )
+  } else {
+    pred_data <- object |>
+      filter(p.value < p_value_cutoff) |>
+      unnest(
+        cols = c( {{ group }}, .predict)
+      )
+  }
+  
+  # Create plot
+  f_group <- enquo(group)
+  
+  p_test <- obs_data |>
+    ggplot(
+      aes(
+        x = {{ x }},
+        y = {{ y }},
+        group =  {{ group }}
+      )
+    ) +
+    geom_line(
+      data = pred_data,
+      mapping = aes(
+        x = {{ x }},
+        y = predict,
+        group = variable,
+        color = variable,
+        size = variable
+      ),
+      na.rm = TRUE
+    ) +
+    scale_size_manual(
+      values = c(1, 1.5, 1.5)
+    ) +
+    scale_colour_manual(
+      values = c("darkgrey", "red", "blue")
+    ) +
+    geom_point(
+      size = 1.25,
+      alpha = 1,
+      shape = 21,
+      fill = "steelblue",
+      na.rm =TRUE
+    ) +
+    facet_wrap(
+      facets = vars(!!f_group),
+      # facets = {{ group }},
+      ncol = 2,
+      scales = "free_y"
+    ) +
+    labs(
+      x = xlab,
+      y = ylab
+    ) +
+    theme(
+      legend.position = "none"
+    )
+
+  p_test
+  
 }
 
 # NOTE: Make this function work for nested data,
@@ -132,6 +270,9 @@ gam_predict <- function(
 # part from the fitted gam-object?)
 # x and y is variables used to map variables to aesthetics
 
+# Inspired by section 18.3.3:
+# https://ggplot2-book.org/programming.html#multiple-components
+
 # This function works as a geom, e.g.
 # ggplot(data, aes(x,y)) + geom_trend_gam(object)
 
@@ -139,8 +280,6 @@ gam_predict <- function(
 
 # ToDo: This approach doesn't work well for grouped data or multiple datasets,
 # due to the need for an already existing object.
-# A more flexible approach is too call ggplot(data, mapping) + geom_smooth(method = "gam")
-# save this plot and work with the saved object, e.g. extract data with ggplot_build().
 # However gratia::derivatives needs a fitted object...
 # gam_predict should perhaps be called in a separate function outside this function,
 # adding the necessary columns to existing data?
@@ -184,9 +323,9 @@ geom_trend_gam <- function(
     n_pts_predict = 300,
     term_index = 1
 ) {
-
+  
   p <- gam_predict(
-    m = object,
+    .fit_model = object,
     n_pts = n_pts_predict,
     output_format = "wide"
   ) |>
@@ -194,16 +333,16 @@ geom_trend_gam <- function(
       ymin = predict - 1.96 * se.predict,
       ymax = predict + 1.96 * se.predict
     )
-
+  
   p <- p |>
     as.data.frame()
-
+  
   x_term <- gratia::term_names(object)[[term_index]]
-
+  
   # se.predict * qt(0.95 / 2 + .5, object$df.residual)
-
+  
   params <- list(...)
-
+  
   rect.params <- utils::modifyList(params, rect.params)
   ci.params <- utils::modifyList(params, ci.params)
   hline.params <- utils::modifyList(params, hline.params)
@@ -211,22 +350,16 @@ geom_trend_gam <- function(
   fit.decr.params <- utils::modifyList(params, fit.decr.params)
   fit.incr.params <- utils::modifyList(params, fit.incr.params)
   point.params <- utils::modifyList(params, point.params)
-
+  
   rect <- do.call(
     "geom_rect",
     utils::modifyList(
       list(
         data = data.frame(
-          xmin = -Inf,
-          xmax = Inf,
-          ymin = 0.97,
-          ymax = 1.75
+          xmin = -Inf, xmax = Inf, ymin = 0.97, ymax = 1.75
         ),
         mapping = ggplot2::aes(
-          xmin = xmin,
-          xmax = xmax,
-          ymin = ymin,
-          ymax = ymax
+          xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax
         ),
         fill = "palegreen3",
         alpha = 0.2,
@@ -235,17 +368,13 @@ geom_trend_gam <- function(
       rect.params
     )
   )
-
+  
   ci <- do.call(
     "geom_ribbon",
     utils::modifyList(
       list(
         data = p,
-        mapping = aes(
-          get(x_term),
-          ymin = ymin,
-          ymax = ymax
-        ),
+        mapping = aes(get(x_term), ymin = ymin, ymax = ymax),
         fill = "grey60",
         alpha = 0.2,
         inherit.aes = FALSE
@@ -253,7 +382,7 @@ geom_trend_gam <- function(
       ci.params
     )
   )
-
+  
   hline <- do.call(
     "geom_hline",
     utils::modifyList(
@@ -266,16 +395,13 @@ geom_trend_gam <- function(
       hline.params
     )
   )
-
+  
   fit <- do.call(
     "geom_line",
     utils::modifyList(
       list(
         data = p,
-        mapping = aes(
-          get(x_term),
-          predict
-        ),
+        mapping = aes(get(x_term), predict),
         color = "darkgrey",
         linewidth = 1,
         alpha = 1,
@@ -284,16 +410,13 @@ geom_trend_gam <- function(
       fit.params
     )
   )
-
+  
   fit.decr <- do.call(
     "geom_line",
     utils::modifyList(
       list(
         data = p,
-        mapping = aes(
-          get(x_term),
-          decr
-        ),
+        mapping = aes(get(x_term), decr),
         color = "red",
         linewidth = 1.5,
         alpha = 1,
@@ -303,16 +426,13 @@ geom_trend_gam <- function(
       fit.decr.params
     )
   )
-
+  
   fit.incr <- do.call(
     "geom_line",
     utils::modifyList(
       list(
         data = p,
-        mapping = aes(
-          get(x_term),
-          incr
-        ),
+        mapping = aes(get(x_term), incr),
         color = "blue",
         linewidth = 1.5,
         alpha = 1,
@@ -322,7 +442,7 @@ geom_trend_gam <- function(
       fit.incr.params
     )
   )
-
+  
   point <- do.call(
     "geom_point",
     modifyList(
@@ -337,143 +457,22 @@ geom_trend_gam <- function(
       point.params
     )
   )
-
+  
   all_items <- c(
     "rect", "ci", "hline",
     "fit", "fit.decr", "fit.incr",
     "point"
   )
-
+  
   if("all" %in% add_items) {
     add_items <- all_items
   }
-
+  
   out_list <- c(rect, ci, hline, fit, fit.decr, fit.incr, point)
   names(out_list) <- all_items
-
+  
   out_list <- out_list[add_items]
-
+  
   out_list
 }
 
-
-# input argument model is a function!
-
-#' Title
-#'
-#' @param data
-#' @param model
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-gam_fit_trends <- function(data, model) {
-
-  # Created nested data and fit model
-  # for each item in list-column
-
-  m_p <- data |>
-    tidyr::nest() |>
-    dplyr::mutate(
-      m = purrr::map(data, {{ model }} ),
-      s = purrr::map(m, gam_predict),
-      glance = purrr::map(m, broom::glance)
-    ) |>
-    tidyr::unnest(glance) |>
-    dplyr::mutate(
-      t = purrr::map(m, broom::tidy)
-    ) |>
-    tidyr::unnest(t)
-}
-
-# OBS! Endast testad på HELCOM-data!
-# Add call to geom_trend_gam in here instead?
-
-#' Title
-#'
-#' @param object
-#' @param x
-#' @param y
-#' @param group
-#' @param p_value_cutoff
-#' @param xlab
-#' @param ylab
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-plot_gam_fit_trends <- function(
-    object, x, y, group, p_value_cutoff,
-    xlab = NULL, ylab = NULL
-) {
-
-  obs_data <- object |>
-    unnest(
-      cols = c( {{ group }} , data)
-    )
-
-  if (missing(p_value_cutoff)) {
-    pred_data <- object |>
-      unnest(
-        cols = c( {{ group }}, s)
-      )
-  } else {
-    pred_data <- object |>
-      filter(p.value < p_value_cutoff) |>
-      unnest(
-        cols = c( {{ group }} , s)
-      )
-  }
-
-  f_group <- enquo(group)
-
-  p_test <- obs_data |>
-    ggplot(
-      aes(
-        x = {{x}},
-        y = {{y}},
-        group = {{ group }}
-      )
-    ) +
-    geom_line(
-      data = pred_data,
-      mapping = aes(
-        x = {{x}},
-        y = predict,
-        group = variable,
-        color = variable,
-        size = variable
-      ),
-      na.rm = TRUE
-    ) +
-    scale_size_manual(
-      values = c(1, 1.5, 1.5)
-    ) +
-    scale_colour_manual(
-      values = c("darkgrey", "red", "blue")
-    ) +
-    geom_point(
-      size = 1.25,
-      alpha = 1,
-      shape = 21,
-      fill = "steelblue",
-      na.rm =TRUE
-    ) +
-    facet_wrap(
-      facets = vars(!!f_group),
-      ncol = 2,
-      scales = "free_y"
-    ) +
-    labs(
-      x = xlab,
-      y = ylab
-    ) +
-    theme(
-      legend.position = "none"
-    )
-
-  p_test
-
-}

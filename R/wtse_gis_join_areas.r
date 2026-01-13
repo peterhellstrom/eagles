@@ -1,6 +1,3 @@
-# Note that the admin_areas_load() and admin_areas_join() functions
-# have been generalized in st_join_n() and st_join_n_loop().
-
 #' Title
 #'
 #' @param db
@@ -52,73 +49,6 @@ admin_areas_load <- function(
 #' Title
 #'
 #' @param .x
-#' @param lan_sf
-#' @param kommun_sf
-#' @param distrikt_sf
-#' @param rapportomrade_sf
-#' @param id
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-admin_areas_join <- function(
-    .x,
-    lan_sf = lan,
-    kommun_sf = kommun,
-    distrikt_sf = distrikt,
-    rapportomrade_sf = rapportomrade,
-    id = FALSE) {
-
-  if (id == FALSE) {
-    xy_join <- .x |>
-      sf::st_join(
-        lan |>
-          dplyr::select(Lan = lanbok)
-      ) |>
-      sf::st_join(
-        kommun |>
-          dplyr::select(Kommun = kommunnamn)
-      ) |>
-      sf::st_join(
-        distrikt |>
-          dplyr::select(
-            Landskap = landskapbok,
-            Distrikt = distriktsnamn)
-      ) |>
-      # sf::st_join(landskap_ap |>
-      #           dplyr::select(Landskap_AP = area_name)) |>
-      sf::st_join(
-        rapportomrade |>
-          dplyr::select(Rapportomrade = area_name)
-      )
-  } else {
-    xy_join <- .x |>
-      sf::st_join(
-        lan |>
-          dplyr::select(LanID = lankod)
-      ) |>
-      sf::st_join(
-        kommun |>
-          dplyr::select(KommunID = kommunkod)
-      ) |>
-      sf::st_join(
-        distrikt |>
-          dplyr::select(
-            LandskapID = landskapskod,
-            DistriktID = distriktskod)
-      ) |>
-      sf::st_join(
-        rapportomrade |>
-          dplyr::select(RapportomradeID = area_id)
-      )
-  }
-  xy_join
-}
-
-#' Title
-#'
-#' @param .x
 #' @param .y
 #' @param .x_group
 #' @param .y_ID
@@ -145,7 +75,7 @@ wtse_join_areas <- function(
     MetodAndelArea = 1,
     left = FALSE,
     geometry_field = geom
-  ) {
+) {
 
   if (MetodAvstand == 0) {
 

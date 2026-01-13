@@ -223,6 +223,8 @@ db_insert_archive <- function(
     execute = FALSE
 ) {
 
+  on.exit(DBI::dbDisconnect(con))
+
   # List existing files
   x <- tibble::tibble(
     Filnamn =
@@ -235,12 +237,12 @@ db_insert_archive <- function(
   # Construct data
   sql_insert_data <- x |>
     dplyr::mutate(
-      VolymID       = v_id,
-      Lopnr         = (seq_start - 1) + dplyr::row_number(),
-      KontaktID     = observer_id,
+      VolymID       = as.integer(v_id),
+      Lopnr         = as.integer((seq_start - 1) + dplyr::row_number()),
+      KontaktID     = as.integer(observer_id),
       KontaktText   = observer_text,
-      TypDataID     = data_type_id,
-      TypHandlingID = document_type_id,
+      TypDataID     = as.integer(data_type_id),
+      TypHandlingID = as.integer(document_type_id),
       TidsPeriod    = time_text
     ) |>
     dplyr::select(
@@ -251,9 +253,9 @@ db_insert_archive <- function(
     )
 
   # Check if data already exists - only add non-existing file names!
-  con <- RODBC::odbcConnect(dsn = dsn)
+  con <- DBI::dbConnect(odbc::odbc(), dsn = dsn)
 
-  fls_exist <- RODBC::sqlQuery(
+  fls_exist <- DBI::dbGetQuery(
     con,
     stringr::str_c(
       "SELECT * FROM tArkivDok WHERE Filnamn IN (",
@@ -268,8 +270,10 @@ db_insert_archive <- function(
   sql_insert_data <- sql_insert_data |>
     tibble::as_tibble() |>
     dplyr::anti_join(
-      fls_exist, dplyr::join_by(Filnamn)
+      fls_exist,
+      dplyr::join_by(Filnamn)
     )
+
   if (execute) {
 
     sql_insert_str <-
@@ -278,15 +282,15 @@ db_insert_archive <- function(
       TypDataID, TypHandlingID, TidsPeriod)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
-    RODBCext::sqlExecute(
+    DBI::dbExecute(
       con,
       sql_insert_str,
-      data = as.list(sql_insert_data)
+      params = sql_insert_data
     )
 
     # Check if data were inserted to db
     # sql_str_chk <- paste0("SELECT * FROM tArkivDok WHERE VolymID = ", v_id)
-    # tmp <- RODBCext::sqlExecute(con_rodbc, sql_str_chk, fetch = TRUE, as.is = TRUE) |>
+    # tmp <- DBI::dbExecute(con_rodbc, sql_str_chk, fetch = TRUE, as.is = TRUE) |>
     #  tibble::as_tibble() |>
     #  dplyr::select(VolymID, Lopnr, Filnamn, KontaktText, TypDataID, TypHandlingID, TidsPeriod)
 
@@ -294,7 +298,6 @@ db_insert_archive <- function(
     return(sql_insert_data)
   }
 
-  RODBC::odbcClose(con)
 }
 
 # Create bat-file function

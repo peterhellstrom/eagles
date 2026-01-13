@@ -29,7 +29,7 @@ db_full_path <- function(filename) {
 #' @examples
 db_connect_to_access_string <- function(
     # Adapted from RODBC::odbcConnectAccess2007()
-    access_file, uid = "", pwd = "", ...) {
+  access_file, uid = "", pwd = "", ...) {
 
   con <- if (missing(access_file)) {
     "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq="
@@ -43,7 +43,7 @@ db_connect_to_access_string <- function(
   con
 }
 
-#access_connect_string("W:/projects/data/RaptorBase/RaptorBase.accdb")
+#access_connect_string("W:/projects/raptorbase/RaptorBase_Data.accdb")
 
 # Connect to MS Access database
 # Connect with packages DBI or RODBC
@@ -179,13 +179,17 @@ db_import_access <- function(
   }
 
   if(package == "RODBC") {
-    if (input == "file_path") on.exit(close(con))
+    if (input == "file_path") {
+      on.exit(close(con))
+    }
     res <- RODBC::sqlQuery(
       con, sql_expr,
       stringsAsFactors = FALSE, as.is = TRUE
     )
   } else if(package == "DBI") {
-    if (input == "file_path") on.exit(DBI::dbDisconnect(con))
+    if (input == "file_path") {
+      on.exit(DBI::dbDisconnect(con))
+    }
     res <- DBI::dbGetQuery(con, sql_expr)
   }
 
@@ -244,8 +248,6 @@ db_import_access_n <- function(
       )
     )
 }
-
-# Parameterized SQL-queries with RODBCext
 
 #' Title
 #'

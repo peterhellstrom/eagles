@@ -4,7 +4,7 @@
 \alias{wtse_sum}
 \title{Title}
 \usage{
-wtse_sum(.data, ..., .columns = NULL, .remove = FALSE)
+wtse_sum(.data, ..., .columns = NULL, .remove = FALSE, .add_subtotals = TRUE)
 }
 \arguments{
 \item{.remove}{}

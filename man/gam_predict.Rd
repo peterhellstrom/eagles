@@ -4,7 +4,7 @@
 \alias{gam_predict}
 \title{Title}
 \usage{
-gam_predict(m, n_pts_predict = 100, output_format = "long")
+gam_predict(.fit_model, n_pts_predict = 100, output_format = "long")
 }
 \arguments{
 \item{output_format}{}

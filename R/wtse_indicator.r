@@ -235,7 +235,7 @@ brood_size_boot <- function(
       main = "Reference level, WTE brood size",
       font.lab = 2
     )
-    abline(v = quantile(z.bs, c(0.025, 0.5, 0.975)), lty = 2, lwd = 2, col = c(1,2,1))
+    abline(v = z, lty = 2, lwd = 2, col = c(1,2,1))
   }
   z
 }

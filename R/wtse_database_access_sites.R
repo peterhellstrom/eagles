@@ -147,10 +147,12 @@ wtse_sites_get_access_map <- function(
 #'
 #' @examples
 wtse_sites_set_access <- function(.data, dsn = "Havsorn_Data") {
+
   if (nrow(.data$set_access) > 0) {
 
-    on.exit(close(con))
-    con <- RODBC::odbcConnect(dsn)
+    on.exit(DBI::dbDisconnect(con))
+
+    con <- DBI::dbConnect(odbc::odbc(), dsn)
 
     sql_insert_site_role <- eagles::db_pquery(
       "tLokalerKontakter",
@@ -158,10 +160,10 @@ wtse_sites_set_access <- function(.data, dsn = "Havsorn_Data") {
       type = "insert"
     )
 
-    RODBCext::sqlExecute(
+    DBI::dbExecute(
       con,
       sql_insert_site_role,
-      .data$set_access |> as.data.frame()
+      params = .data$set_access |> as.data.frame()
     )
   } else {
     cat("No rows in input data!", "\n")

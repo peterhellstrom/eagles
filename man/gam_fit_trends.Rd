@@ -4,7 +4,7 @@
 \alias{gam_fit_trends}
 \title{Title}
 \usage{
-gam_fit_trends(data, model)
+gam_fit_trends(.data, .model_fn, .predict_fn = gam_predict, ...)
 }
 \arguments{
 \item{model}{}

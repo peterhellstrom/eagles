@@ -63,7 +63,7 @@ usethis::use_package("rlang", min_version = TRUE)
 usethis::use_package("RODBC", min_version = TRUE)
 usethis::use_package("rstudioapi", min_version = TRUE)
 usethis::use_package("rvest", min_version = TRUE)
-usethis::use_package("sf", min_version = TRUE)
+usethis::use_package("sf", min_version = "1.0.21")
 usethis::use_package("stringi", min_version = TRUE)
 usethis::use_package("stringr", min_version = TRUE)
 usethis::use_package("tibble", min_version = TRUE)
@@ -72,7 +72,7 @@ usethis::use_package("tidyselect", min_version = TRUE)
 usethis::use_package("xml2", min_version = TRUE)
 
 # Dependencies on non-CRAN packages:
-usethis::use_dev_package("RODBCext", remote = "github::zozlak/RODBCext")
+
 usethis::use_dev_package("sifr", remote = "github::s-fleck/sifr")
 usethis::use_dev_package("swecoords", remote = "github::peterhellstrom/swecoords")
 
@@ -105,3 +105,4 @@ rc_species_list |>
 wtse_sites(add_monitoring = FALSE)
 
 add_timestamp("test", ".xlsx")
+add_timestamp("test")

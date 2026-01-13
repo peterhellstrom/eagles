@@ -54,45 +54,80 @@ wtse_sites <- function(
   }
 
   sites_sql <-
-    "SELECT tLokaler.*,
-    luGeografiLivsmiljo.Livsmiljo,
-    luGeografiLandsdel.Landsdel,
-    luGeografiVattendistrikt.Vattendistrikt,
-    luGeografiRegion.Region,
-    luGeografiLan.LanBokstav AS Lan,
-    luGeografiKommun.Kommun,
-    luGeografiLandskap.LandskapBokstav AS Landskap,
-    luGeografiDistrikt.Distrikt,
-    luGeografiRapportomrade.Rapportomrade,
-    luGeografiDelomrade.Delomrade
-    FROM ((((((((((tLokaler
-    LEFT JOIN luGeografiRegion ON tLokaler.RegionID = luGeografiRegion.RegionID)
-    LEFT JOIN luGeografiLan ON tLokaler.LanID = luGeografiLan.LanID)
-    LEFT JOIN luGeografiKommun ON tLokaler.KommunID = luGeografiKommun.KommunID)
-    LEFT JOIN luGeografiLandskap ON tLokaler.LandskapID = luGeografiLandskap.LandskapID)
-    LEFT JOIN luGeografiDistrikt ON tLokaler.DistriktID = luGeografiDistrikt.DistriktID)
-    LEFT JOIN luGeografiRapportomrade ON tLokaler.RapportomradeID = luGeografiRapportomrade.RapportomradeID)
-    LEFT JOIN luGeografiDelomrade ON tLokaler.DelomradeID = luGeografiDelomrade.DelomradeID)
-    LEFT JOIN luGeografiLivsmiljo ON tLokaler.LivsmiljoID = luGeografiLivsmiljo.LivsmiljoID)
-    LEFT JOIN luGeografiLandsdel ON tLokaler.LandsdelID = luGeografiLandsdel.LandsdelID)
-    LEFT JOIN luGeografiVattendistrikt ON tLokaler.VattendistriktID = luGeografiVattendistrikt.VattendistriktID)
-  ORDER BY tLokaler.LanID, tLokaler.Lokalkod"
+    "SELECT
+  tLokaler.LokalID,
+  tLokaler.Lokalkod,
+  tLokaler.Lokalnamn,
+  tLokaler.LivsmiljoID,
+  luGeografiLivsmiljo.Livsmiljo,
+  tLokaler.RegionID,
+  luGeografiRegion.Region,
+  tLokaler.LanID,
+  luGeografiLan.LanBokstav,
+  luGeografiLan.Lan,
+  tLokaler.KommunID,
+  luGeografiKommun.Kommun,
+  tLokaler.LandskapID,
+  luGeografiLandskap.LandskapBokstav,
+  luGeografiLandskap.Landskap,
+  tLokaler.DistriktID,
+  luGeografiDistrikt.Distrikt,
+  tLokaler.RapportomradeID,
+  luGeografiRapportomrade.Rapportomrade,
+  tLokaler.DelomradeID,
+  luGeografiDelomrade.Delomrade,
+  tLokaler.VattendistriktID,
+  luGeografiVattendistrikt.Vattendistrikt,
+  tLokaler.LandsdelID,
+  luGeografiLandsdel.Landsdel,
+  tLokaler.StationID,
+  tLokaler.ProvplatsID,
+  tLokaler.ProvplatsID_OLD,
+  tLokaler.BoplatsOkand,
+  tLokaler.AlternativKod,
+  tLokaler.AlternativtNamn,
+  tLokaler.KommentarPublik,
+  tLokaler.ForstaAr,
+  tLokaler.Flyg,
+  tLokaler.Ortnamn_LOPNR,
+  tLokaler.date_created,
+  tLokaler.date_last_modified,
+  tLokaler.created_by,
+  tLokaler.last_modified_by,
+  tLokaler.record_version,
+  tLokaler.flag_deleted,
+  tLokaler.LokalUUID,
+  tLokaler.ESBaseID
+  FROM ((((((((((tLokaler
+  LEFT JOIN luGeografiRegion ON tLokaler.RegionID = luGeografiRegion.RegionID)
+  LEFT JOIN luGeografiLan ON tLokaler.LanID = luGeografiLan.LanID)
+  LEFT JOIN luGeografiKommun ON tLokaler.KommunID = luGeografiKommun.KommunID)
+  LEFT JOIN luGeografiLandskap ON tLokaler.LandskapID = luGeografiLandskap.LandskapID)
+  LEFT JOIN luGeografiDistrikt ON tLokaler.DistriktID = luGeografiDistrikt.DistriktID)
+  LEFT JOIN luGeografiRapportomrade ON tLokaler.RapportomradeID = luGeografiRapportomrade.RapportomradeID)
+  LEFT JOIN luGeografiDelomrade ON tLokaler.DelomradeID = luGeografiDelomrade.DelomradeID)
+  LEFT JOIN luGeografiLivsmiljo ON tLokaler.LivsmiljoID = luGeografiLivsmiljo.LivsmiljoID)
+  LEFT JOIN luGeografiLandsdel ON tLokaler.LandsdelID = luGeografiLandsdel.LandsdelID)
+  LEFT JOIN luGeografiVattendistrikt ON tLokaler.VattendistriktID = luGeografiVattendistrikt.VattendistriktID)
+  ORDER BY tLokaler.LanID, tLokaler.Lokalkod;"
+
+  # Columns Alias, KommentarHenlig and OrtnamnOsakert are not included in
+  # expression above.
 
   sites <- DBI::dbGetQuery(con, sites_sql) |>
     tibble::as_tibble()
 
-  # Re-format sites table
-  sites <- sites |>
-    dplyr::relocate(
-      Livsmiljo:Delomrade,
-      .after = LokalID
-    ) |>
-    # Drop some non-essential columns (this step might change)
-    dplyr::select(-Alias, -KommentarHemlig, -OrtnamnOsakert)
-
   if (drop_id_columns) {
     sites <- sites |>
-      dplyr::select(-c(StationID:DelomradeID))
+      dplyr::select(
+        -c(
+          LivsmiljoID, RegionID, LanID, KommunID, LandskapID,
+          DistriktID, RapportomradeID, DelomradeID,
+          VattendistriktID, LandsdelID,
+          StationID, ProvplatsID, ProvplatsID_OLD,
+          LokalUUID, ESBaseID
+        )
+      )
   }
 
   if (add_subsites) {
@@ -134,6 +169,7 @@ wtse_sites <- function(
       # message("Use spatial data in tLokalerOrtnamn")
 
       sites_coords <- DBI::dbReadTable(con, "tLokalerOrtnamn") |>
+        dplyr::select(lopnr, northing, easting) |> 
         tibble::as_tibble() |>
         sf::st_as_sf(
           coords = c("easting", "northing"),
@@ -214,49 +250,6 @@ wtse_sites <- function(
 # wtse_sites(FALSE, 3847, TRUE, coordinate_cols = c("Easting", "Northing"), add_monitoring = FALSE)
 # wtse_sites(FALSE, 4326, TRUE, coordinate_cols = c("longitude", "latitude"), add_monitoring = FALSE)
 
-
-#' Title
-#'
-#' @param .data
-#' @param .lookup_table
-#' @param .join_cols
-#' @param .fn_join
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-named_join <- function(
-    .data,
-    .lookup_table,
-    .join_cols,
-    .fn_join = dplyr::left_join
-) {
-  .data |>
-    .fn_join(
-      .lookup_table,
-      dplyr::join_by( {{ .join_cols }} )
-    )
-}
-
-# a <- tribble(
-#   ~id, ~state_abbrev,
-#   1, "AL",
-#   2, "AK"
-# )
-#
-# b <- tribble(
-#   ~id, ~state_name,
-#   1, "Alabama",
-#   2, "Alaska",
-#   3, "Arizona"
-# )
-#
-# named_join(a, b, id, .fn_join = dplyr::left_join)
-# named_join(a, b, id, .fn_join = dplyr::right_join)
-# named_join(a, b, id, .fn_join = dplyr::full_join)
-# named_join(a, b, id, .fn_join = dplyr::inner_join)
-
 get_sites_coords <- function(con) {
   # Add geographical data (in SWEREF99 TM)
   # Source data is "hard-coded" in the data connection.
@@ -308,7 +301,7 @@ wtse_sites_subregion <- function() {
       LokalID, RegionID, KommunID
     ) |>
     dplyr::mutate(
-      SubRegion = wtse_region_from_kommun(
+      SubRegion = wtse_add_region_from_kommun(
         as.character(RegionID),
         KommunID
       ),

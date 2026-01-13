@@ -49,7 +49,7 @@ rc_ringon_search_txt <- function (
     pattern_sites = "^L\\|",
     fixed = FALSE,
     markers = FALSE,
-    empty_ringondb = "W:/projects/data/ringing/RingDb_tom_2018-10-15.mdb"
+    empty_ringondb = "W:/projects/white_tailed_sea_eagle/ringing/data/RingDb0.mdb"
 ) {
 
   pattern_broods <- glue::glue("^K.*{species_code}")

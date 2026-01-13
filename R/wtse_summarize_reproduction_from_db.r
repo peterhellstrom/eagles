@@ -44,7 +44,7 @@
 #'
 #' @examples
 wtse_columns <- function (
-    dsn = "Havsorn",
+    dsn = "Havsorn_Data",
     table = "luOvervakningUtfall",
     column = "OvervakningUtfallR",
     ...) {
@@ -82,9 +82,10 @@ wtse_columns <- function (
 wtse_transform <- function(
     .data,
     ...,
-    .response = UtfallR,
+    .response = OvervakningUtfallR,
     .columns = NULL,
-    .drop = FALSE) {
+    .drop = FALSE
+) {
 
   # ... are the user-specified grouping variables,
   # e.g. Region, CensusYear
@@ -96,17 +97,23 @@ wtse_transform <- function(
     .columns <- wtse_columns()
   }
 
+  # Note that this section could be re-written,
+  # the count()-part can be done directly with pivot_wider()!
   .data_pivot <- .data |>
-    dplyr::count(..., {{ .response }}, .drop = .drop) |>
+    dplyr::count(
+      ...,
+      {{ .response }},
+      .drop = .drop
+    ) |>
     tidyr::pivot_wider(
       values_from = n,
-      names_from = UtfallR
+      names_from = {{ .response }}
     )
 
   .columns |>
     dplyr::bind_rows(.data_pivot) |>
     dplyr::relocate(...) |>
-    {\(.) {base::replace(., base::is.na(.), 0)}}()
+    dplyr::mutate(across(where(is.integer), \(x) replace_na(x, 0)))
 }
 
 # OBS! Variabeln "Kända revir" bör läggas till här!
@@ -155,7 +162,7 @@ wtse_vars <- function(
 # Sum yearly monitoring posts per site
 # This function was really slow in R 4.3.0!
 # I had re-written the function based on dplyr::case_when statements.
-# But it was confirmed that code is much faster in R 4.1.3. It is the case_when
+# But it was confirmed that code is much faster in R 4.1.3. It is the dplyr::case_when()
 # statements that causes trouble.
 
 #' Title
@@ -211,7 +218,8 @@ wtse_sum <- function(
     .data,
     ...,
     .columns = NULL,
-    .remove = FALSE
+    .remove = FALSE,
+    .add_subtotals = TRUE
 ) {
 
   if (missing(.columns)) {
@@ -224,15 +232,19 @@ wtse_sum <- function(
       .columns = .columns
     )
 
+  if (.add_subtotals) {
+    .x <- .x |>
+      data.table::data.table() |>
+      data.table::cube(
+        base::lapply(.SD, sum),
+        by = base::sapply(
+          dplyr::vars(...), rlang::quo_text
+        )
+      ) |>
+      tibble::as_tibble()
+  }
+
   .x <- .x |>
-    data.table::data.table() |>
-    data.table::cube(
-      base::lapply(.SD, sum),
-      by = base::sapply(
-        dplyr::vars(...), rlang::quo_text
-      )
-    ) |>
-    tibble::as_tibble() |>
     wtse_vars()
 
   .x <- .x |>
