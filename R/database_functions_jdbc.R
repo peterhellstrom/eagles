@@ -17,7 +17,8 @@ access_db_java_connection <- function(
     access_db_path,
     ...,
     driver_db_dir = getwd(),
-    bin_dir = "UCanAccess-5.0.1.bin") {
+    bin_dir = "UCanAccess-5.0.1.bin"
+) {
 
   # access DB path verification ----
   if (!is.character(access_db_path)) {
@@ -34,12 +35,15 @@ access_db_java_connection <- function(
 
   access_jdbc_driver <- RJDBC::JDBC(
     driverClass = "net.ucanaccess.jdbc.UcanaccessDriver",
-    classPath = class_path)
+    classPath = class_path
+  )
 
   # connection to Access database ----
   con_string <- paste0("jdbc:ucanaccess://", access_db_path, ...)
   access_jdbc_connection <- RJDBC::dbConnect(access_jdbc_driver, con_string)
+
   return(access_jdbc_connection)
+
 }
 
 # Open encrypted database? ----
@@ -61,7 +65,8 @@ access_db_java_connection <- function(
 access_encrypted_db_java_connection <- function(
     access_db_path,
     user = "", password,
-    driver_db_dir = getwd()) {
+    driver_db_dir = getwd()
+) {
 
   # access DB path verification ----
   if (! is.character(access_db_path)) {
@@ -92,10 +97,12 @@ access_encrypted_db_java_connection <- function(
 
   access_jdbc_driver <- RJDBC::JDBC(
     driverClass = "net.ucanaccess.jdbc.UcanaccessDriver",
-    classPath = class_path)
+    classPath = class_path
+  )
 
   # connection to Access database ----
   con_string <- paste0("jdbc:ucanaccess://", access_db_path, ";jackcessOpener=com.gordthompson.ucanaccess.crypto.CryptCodecOpener")
   access_jdbc_connection <- RJDBC::dbConnect(access_jdbc_driver, con_string, user, password)
+
   return(access_jdbc_connection)
 }

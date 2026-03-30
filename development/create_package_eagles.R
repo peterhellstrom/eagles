@@ -87,6 +87,7 @@ usethis::use_tidy_description()
 
 # Install package ----
 install()
+install(upgrade = FALSE, dependencies = FALSE)
 
 # install_github("peterhellstrom/eagles")
 

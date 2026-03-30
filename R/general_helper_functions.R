@@ -368,45 +368,7 @@ colname_to_value2 <- function(.x, cols) {
     )
 }
 
-#' Title
-#'
-#' @param .x
-#' @param .data
-#' @param .vars
-#' @param .fn
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
-  .x %>%
-    purrr::map(
-      ~ .data %>%
-        dplyr::group_by_at(.x) %>%
-        dplyr::summarize_at(vars({{.vars}}), .fn, na.rm = TRUE)
-    ) %>%
-    dplyr::bind_rows()
-}
 
-#' Title
-#'
-#' @param .x
-#' @param .var
-#' @param ...
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-add_wt <- function(.x, .var, ...) {
-  .x |>
-    dplyr::select( {{.var }}, ...) |>
-    dplyr::distinct() |>
-    dplyr::add_count( {{.var}} ) |>
-    dplyr::mutate(wt = 1/n) |>
-    dplyr::arrange( {{.var}} )
-}
 
 #' Title
 #'

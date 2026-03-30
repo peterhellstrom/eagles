@@ -8,12 +8,12 @@
 #' @examples
 group_levels <- function(.x) {
   purrr::map(
-    seq_along(.x), \(i) .x[1:i]
+    base::seq_along(.x), \(i) .x[1:i]
   ) |>
     rlang::set_names(
-      seq_along(.x)
+      base::seq_along(.x)
     ) |>
-    rev()
+    base::rev()
 }
 
 #' Title
@@ -33,7 +33,8 @@ group_sum <- function(
     group_cols,
     summarize_cols,
     fn = sum,
-    na_rm = TRUE) {
+    na_rm = TRUE
+) {
 
   data |>
     dplyr::summarize(
@@ -84,4 +85,25 @@ group_sum_sets <- function(
       all_of(names_to),
       any_of(names(data))
     )
+}
+
+#' Title
+#'
+#' @param .x
+#' @param .data
+#' @param .vars
+#' @param .fn
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+sum_by_grp <- function(.x, .data, .vars, .fn = sum) {
+  .x |>
+    purrr::map(
+      \(x) .data |>
+        dplyr::group_by_at(x) |>
+        dplyr::summarize_at(vars( {{ .vars }} ), .fn, na.rm = TRUE)
+    ) |>
+    dplyr::bind_rows()
 }

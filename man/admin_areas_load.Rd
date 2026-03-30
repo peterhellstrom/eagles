@@ -6,7 +6,7 @@
 \usage{
 admin_areas_load(
   db = Sys.getenv("gpkg_naturvard"),
-  layer = c("admin_kommun_fastk", "admin_lan_fastk", "admin_distrikt",
+  layer = c("admin_kommun", "admin_lan", "admin_distrikt",
     "admin_landskap_fran_distrikt", "admin_landskap_artportalen",
     "admin_rapportomrade_artportalen"),
   import_to_sf = c("kommun", "lan", "distrikt", "landskap", "landskap_ap",
